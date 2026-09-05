@@ -25,17 +25,9 @@ const trackedDeps = () => {
   return {
     calls,
     deps: {
-      stopSweep: () => {
-        calls.push("stopSweep");
-      },
       server: {
         stop: async () => {
           calls.push("server.stop");
-        },
-      },
-      db: {
-        close: async () => {
-          calls.push("db.close");
         },
       },
       exit: (code: number) => {
@@ -46,13 +38,13 @@ const trackedDeps = () => {
 };
 
 describe("registerShutdown", () => {
-  test("drains in order: sweep, server, pool, exit(0)", async () => {
+  test("drains the server, then exits 0", async () => {
     const { calls, deps } = trackedDeps();
     const shutdown = registerShutdown(deps);
 
     await shutdown("SIGTERM");
 
-    expect(calls).toEqual(["stopSweep", "server.stop", "db.close", "exit(0)"]);
+    expect(calls).toEqual(["server.stop", "exit(0)"]);
   });
 
   test("registers handlers for SIGTERM and SIGINT", () => {
@@ -83,14 +75,14 @@ describe("registerShutdown", () => {
     release();
     await Promise.all([first, second]);
 
-    expect(calls).toEqual(["stopSweep", "server.stop", "db.close", "exit(0)"]);
+    expect(calls).toEqual(["server.stop", "exit(0)"]);
   });
 
   // A rejection escaping the signal handler is an unhandled rejection, which
   // Bun treats as fatal — so an unguarded step would kill the process partway
-  // through the drain, with the pool still open, which is the outcome
+  // through the drain, with `exit` never reached, which is the outcome
   // registerShutdown exists to prevent.
-  test("a failing drain still closes the pool and exits", async () => {
+  test("a failing drain still exits", async () => {
     const { calls, deps } = trackedDeps();
     deps.server.stop = async () => {
       calls.push("server.stop");
@@ -100,19 +92,6 @@ describe("registerShutdown", () => {
 
     await shutdown("SIGTERM");
 
-    expect(calls).toEqual(["stopSweep", "server.stop", "db.close", "exit(0)"]);
-  });
-
-  test("a failing pool close still exits", async () => {
-    const { calls, deps } = trackedDeps();
-    deps.db.close = async () => {
-      calls.push("db.close");
-      throw new Error("pool already gone");
-    };
-    const shutdown = registerShutdown(deps);
-
-    await shutdown("SIGTERM");
-
-    expect(calls).toEqual(["stopSweep", "server.stop", "db.close", "exit(0)"]);
+    expect(calls).toEqual(["server.stop", "exit(0)"]);
   });
 });

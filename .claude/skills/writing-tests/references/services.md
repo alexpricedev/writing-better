@@ -1,67 +1,52 @@
 # Service and middleware tests
 
-Services run against a real PostgreSQL database from `.env.test` — real SQL, real constraints, no
-query mocking.
+Services here are pure: they read the environment and compute, and none of them talk to a
+database — there isn't one. So most service tests need no fixture at all beyond the module
+itself.
 
 ## Shape
 
 ```ts
-import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
-import { testDatabase } from "../test-utils/database";
-import { cleanupTestData, seedTestData } from "../test-utils/helpers";
+import { describe, expect, test } from "bun:test";
+import { buildRobotsTxt, SITE_URL } from "./seo";
 
-const connection = testDatabase();
-
-mock.module("./database", () => ({
-  get db() { return connection; },
-}));
-
-import { db } from "./database";
-import { createProject, getProjects } from "./project";
-
-describe("Project service", () => {
-  beforeEach(async () => {
-    await cleanupTestData(db);
-  });
-
-  afterAll(async () => {
-    await connection.end();
-    mock.restore();
+describe("buildRobotsTxt", () => {
+  test("points crawlers at the absolute sitemap URL", () => {
+    expect(buildRobotsTxt()).toContain(`Sitemap: ${SITE_URL}/sitemap.xml`);
   });
 });
 ```
 
-Four things this shape is load-bearing on:
+Two things worth keeping to:
 
-- **The connection comes from `testDatabase()`.** Never `new SQL(...)` — the default pool is 10
-  per file and `--parallel` runs one file per core, which exhausts `max_connections`. A guard test
-  fails the suite if a test file constructs its own. See CLAUDE.md.
+- **Mock only what reaches outside the module.** `mock.module` has to run before the module under
+  test is evaluated, so when a service does need a mocked dependency, the import of the service
+  sits *below* the mock. That ordering is intentional wherever you see it; leave it.
+- **Restore in `afterAll`.** A file that calls `mock.module` needs `mock.restore()`, or its mock
+  outlives it in the same worker.
 
-- **The mock precedes the imports.** `mock.module` has to run before the service module is
-  evaluated, so the service imports sit below executable code. That is intentional; leave it.
-- **The getter.** `get db()` defers resolution so the mock survives module caching.
-- **`await connection.end()` in `afterAll`.** Without it the file hangs and the runner kills it
-  at the 60s timeout.
+## Environment-dependent services
 
-## Isolation
+Several services read `process.env` on every call so a test can flip a value mid-file —
+`security-txt.ts` on `SECURITY_CONTACT`, `assets.ts` on `NODE_ENV`. Set the variable inside the
+test and restore it in a `finally` or `afterEach`; the preload's value is what every other file
+expects to see.
 
-`cleanupTestData(db)` truncates `user_tokens`, `sessions`, `users`, and `project`, and restarts
-`project_id_seq`. Call it in `beforeEach`, not `afterEach` — a failed test then leaves its rows
-behind for inspection. Extend that helper when you add a table rather than truncating inline.
-
-`seedTestData(db)` inserts three known projects. `randomEmail()` gives a collision-free address
-for user fixtures.
+Anything that reads or writes `dist/assets` must call `setAssetsDirForTest()` first and pass
+`null` afterwards — see CLAUDE.md for the incident that rule comes from.
 
 ## What to cover
 
-Full CRUD against real SQL, plus the cases the database enforces and TypeScript can't: unique
-violations, foreign-key cascades, null columns, ordering guarantees.
+The output contract and the branches: a missing optional env var, a production-only code path, the
+error case. There is no database to enforce anything for you, so a constraint you care about is a
+constraint you assert.
 
 ## Middleware
 
 Middleware in `src/server/middleware/` returns `Response | null` — a `Response` means "stop, this
-is the answer", `null` means "carry on". Assert both branches. CSRF and auth middleware read
-sessions from PostgreSQL, so they need the same live connection setup as services.
+is the answer", `null` means "carry on". Assert both branches.
 
-`csrfProtection` validates the request `Origin` against `APP_URL`, so requests built in tests need
-a matching `Origin` header or an explicit `expectedOrigin` option.
+`rate-limit.ts` keeps its request log in a module-level Map shared by every file in a worker
+process, so any test that drives a rate-limited route must call `clearRateLimitLog()` in
+`beforeEach`. Without it the file passes alone and fails after any file that pushed the limiter
+to 429.

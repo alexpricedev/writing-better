@@ -1,6 +1,6 @@
 # Accessibility Runbook
 
-Billet ships a WCAG-aligned baseline in the framework layer: semantic
+This app ships a WCAG-aligned baseline in the framework layer: semantic
 server-rendered HTML, programmatically labelled form controls, a keyboard focus
 ring, reduced-motion support, screen-reader-announced flash messages, and
 captioned data tables. Because everything renders on the server, assistive tech
@@ -13,7 +13,7 @@ following as you add pages, and how to verify it all. It's aligned to the
 [Website Specification — Accessibility](https://specification.website/accessibility)
 checklist (28 items).
 
-## 1. What Billet ships (the baseline)
+## 1. What This app ships (the baseline)
 
 These are handled in the framework layer and apply to every page automatically:
 
@@ -28,7 +28,7 @@ These are handled in the framework layer and apply to every page automatically:
 | Reduced motion | `style.css`, `home.ts` | `prefers-reduced-motion` shrinks transitions and stops the hero animation looping |
 | Announced flash messages | `flash.tsx` | `role="alert"` for errors, `role="status"` for success |
 | Data tables | `data-table.tsx`, templates | `<caption>` + `scope="col"` header cells |
-| Accessible authentication | magic-link login | No password puzzle or CAPTCHA; `autocomplete="email"`; paste allowed |
+| Accessible authentication | no sign-in at all | Nothing to remember, no puzzle or CAPTCHA to pass |
 | Mobile inputs | `style.css` | Inputs are `font-size: 16px` so iOS Safari doesn't zoom on focus |
 | Screen-reader-only text | `.sr-only` utility | `style.css` — visually hidden, still announced |
 
@@ -37,7 +37,7 @@ text, so there are no unnamed links or buttons.
 
 ## 2. Your responsibility (the design layer)
 
-Billet ships a placeholder dark theme. The moment you replace it with your own
+This app ships a placeholder dark theme. The moment you replace it with your own
 design language, these become yours to own — a framework can't decide them for
 you:
 
@@ -52,7 +52,7 @@ you:
   `--color-primary`. If you change the palette, confirm the ring stays clearly
   visible against every surface it can appear on. Never reintroduce
   `outline: none` without an equally visible replacement.
-- **Forced colours mode** — Billet is dark-only and does not yet ship a
+- **Forced colours mode** — This app is dark-only and does not yet ship a
   `forced-colors` media block. If your design relies on background colours to
   convey meaning (e.g. status pills), add
   [forced-colours](https://specification.website/spec/accessibility/forced-colors/)

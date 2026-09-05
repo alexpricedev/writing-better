@@ -6,31 +6,32 @@ Mock the services the controller imports; assert on the real `Response` it retur
 
 ```ts
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
-import type { Project } from "../../services/project";
-import { createBunRequest } from "../../test-utils/bun-request";
-import { testDatabase } from "../../test-utils/database";
-import { cleanupTestData } from "../../test-utils/helpers";
+import type { VisitorStats } from "../../services/analytics";
 
-// testDatabase(), never `new SQL(...)` — see CLAUDE.md. A guard test enforces it.
-const connection = testDatabase();
+const mockGetVisitorStats = mock((): VisitorStats => ({
+  visitorCount: 1234,
+  lastUpdated: "2025-01-01T00:00:00.000Z",
+}));
+mock.module("../../services/analytics", () => ({
+  getVisitorStats: mockGetVisitorStats,
+}));
 
-// Mocks must run before the module under test is imported.
-mock.module("../../services/database", () => ({ get db() { return connection; } }));
+import { statsApi } from "./stats";   // deliberately below the mock
 
-const mockGetProjects = mock(async (): Promise<Project[]> => []);
-mock.module("../../services/project", () => ({ getProjects: mockGetProjects }));
+beforeEach(() => {
+  mockGetVisitorStats.mockClear();
+});
 
-import { projects } from "./projects";   // deliberately below the mocks
-
-afterAll(async () => {
-  await connection.end();
+afterAll(() => {
   mock.restore();
 });
 ```
 
-Controllers that touch sessions, CSRF, or auth still need a live connection even though the
-domain service is mocked — sessions are stored in PostgreSQL. Clear each mock in `beforeEach`
-with `mockClear()`.
+The import sits below executable code on purpose: `mock.module` has to run before the module under
+test is evaluated. Don't tidy it.
+
+A controller with no service to mock needs none of this — see `controllers/app/home.test.ts`,
+which imports the controller and asserts on the HTML.
 
 ## Building requests
 
@@ -38,42 +39,41 @@ with `mockClear()`.
 with `params` and a working `cookies` API. Use `findSetCookie(req, name)` /
 `getSetCookieHeaders(req)` to assert on cookies the controller set.
 
-`createMockRequest(url, method, body)` from `test-utils/setup.ts` is the lighter option when the
-handler needs neither params nor cookies.
+`createMockRequest(url, method, body, headers)` from `test-utils/setup.ts` is the lighter option
+when the handler needs neither params nor cookies. A string body is sent verbatim, so a test can
+post something malformed; `headers` overrides the JSON default, which is the only way to exercise
+the API's media-type guard.
 
 ## API controllers
 
 Assert the HTTP contract directly:
 
 ```ts
-const res = await examplesApi.index(createMockRequest("http://localhost/api/examples"));
+const res = statsApi.index(createMockRequest("http://localhost/api/stats"));
 expect(res.status).toBe(200);
-await expectJsonResponse(res, { examples: [] });
+await expectJsonResponse(res, { data: stats });
 ```
 
-Cover the error paths — bad input, missing resource, unauthorised — not just the happy one.
+Cover the error paths — bad input, missing resource, wrong media type, the rate limit — not just
+the happy one. `expectJsonError(res, status, code)` asserts the shared error envelope by `code`,
+never by its prose.
+
+Any test that drives a rate-limited route needs `clearRateLimitLog()` in `beforeEach`: the
+limiter's log is module-level state shared across every file in the worker.
 
 ## View controllers
 
 Render the response body and assert on the HTML:
 
 ```ts
-const res = await projects.index(createBunRequest("http://localhost/projects"));
+const res = home.index();
 expect(res.status).toBe(200);
-expect(await res.text()).toContain("Test Project");
+expect(await res.text()).toContain('data-page="home"');
 ```
 
 For redirects, assert the status and the `Location` header rather than the body:
 
 ```ts
 expect(res.status).toBe(303);
-expect(res.headers.get("Location")).toBe("/login");
+expect(res.headers.get("Location")).toBe("/");
 ```
-
-Test the guest and the authenticated render of anything auth-aware — build a session with
-`createAuthenticatedSession` / `createGuestSession` and pass the cookie through the request.
-
-## Fixtures
-
-`test-utils/factories.ts` has `createMockProject` and `createMockVisitorStats`, both taking an
-overrides object. Add new factories there rather than hand-rolling shapes in each test.

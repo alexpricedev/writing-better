@@ -104,19 +104,19 @@ export type IdResult =
   | { ok: true; id: number }
   | { ok: false; response: Response };
 
-// Every id column in the schema is a `serial`, i.e. a Postgres int4. A larger
-// number is not an id that could ever exist, and passing one through would make
-// Postgres raise "out of range" — an exception, so an HTML 500 — where the
-// client deserves to be told its input was wrong.
+// An id ceiling of int4, which is what a sequential id in any conventional
+// store tops out at. A larger number is not an id that could ever exist, and
+// rejecting it here means a store that raises "out of range" — an exception, so
+// an HTML 500 — never sees it. The client is told its input was wrong instead.
 const MAX_SERIAL_ID = 2_147_483_647;
 
 /**
  * Read the trailing `:id` path segment as a positive integer.
  *
  * The parse this replaces (`Number.parseInt(segment) || 0`) handed its result
- * straight to the service, so `/api/projects/invalid` queried the database for
- * `NaN` and answered the miss with a 404 — telling the client the project did
- * not exist, when in fact it had never named one.
+ * straight to the service, so `/api/things/invalid` looked up `NaN` and answered
+ * the miss with a 404 — telling the client the resource did not exist, when in
+ * fact it had never named one.
  */
 export const readIdParam = (req: BunRequest): IdResult => {
   const segment = new URL(req.url).pathname.split("/").pop() ?? "";

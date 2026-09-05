@@ -7,10 +7,8 @@ import {
   SITE_URL,
   siteStructuredData,
 } from "../services/seo";
-import type { User } from "../services/users";
 import { Logo } from "./logo";
 import { Nav } from "./nav";
-import { VerifyBanner } from "./verify-banner";
 
 // The site is dark-only (see `colorScheme: "dark"` on <html>), so theme-color
 // matches --color-bg from style.css rather than shipping light/dark variants.
@@ -75,8 +73,6 @@ interface LayoutProps {
   title: string;
   name: string;
   children: ComponentChildren;
-  user?: User | null;
-  csrfToken?: string;
   description?: string;
   canonicalPath?: string;
   noindex?: boolean;
@@ -86,8 +82,6 @@ export function Layout({
   title,
   name,
   children,
-  user,
-  csrfToken,
   description = SITE_DESCRIPTION,
   canonicalPath,
   noindex,
@@ -101,18 +95,12 @@ export function Layout({
           canonicalPath={canonicalPath}
           noindex={noindex}
         />
-        {/* Preact (via the importmap below) loads from esm.sh and Lottie from
-            unpkg. Preconnect opens the TLS connection while the HTML parses so
-            the first cross-origin fetch doesn't pay the handshake; dns-prefetch
-            is the cheaper fallback for browsers that ignore preconnect. */}
+        {/* Preact (via the importmap below) loads from esm.sh. Preconnect opens
+            the TLS connection while the HTML parses so the first cross-origin
+            fetch doesn't pay the handshake; dns-prefetch is the cheaper
+            fallback for browsers that ignore preconnect. */}
         <link rel="preconnect" href="https://esm.sh" crossOrigin="anonymous" />
-        <link
-          rel="preconnect"
-          href="https://unpkg.com"
-          crossOrigin="anonymous"
-        />
         <link rel="dns-prefetch" href="https://esm.sh" />
-        <link rel="dns-prefetch" href="https://unpkg.com" />
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
         <meta property="og:image" content={`${SITE_URL}/og-image.png`} />
@@ -144,47 +132,28 @@ export function Layout({
           }}
         />
       </head>
-      {/* data-banner drives the body offset for the fixed banner. Set from the
-          same condition the component renders on, so the padding can't outlive
-          the bar it makes room for. */}
-      <body
-        data-page={name}
-        data-component="layout"
-        data-banner={
-          user && !user.email_verified_at ? "verify-email" : undefined
-        }
-      >
-        <VerifyBanner user={user} />
+      <body data-page={name} data-component="layout">
         <header>
           <a href="/" className="logo">
             <Logo />
-            <span>Billet</span>
+            <span>{SITE_NAME}</span>
           </a>
-          <Nav page={name} user={user} csrfToken={csrfToken} />
+          <Nav page={name} />
         </header>
         <main>{children}</main>
         <SiteFooter />
-        <script
-          async
-          src="https://unpkg.com/lottie-web@5.13.0/build/player/lottie_light.min.js"
-          integrity="sha384-Gr3FGWSrOz4fzm9bvrWwhuQH87JMUCLlOTaHhpddbnlHHWCZPxMeQ3KUPsomzIii"
-          crossOrigin="anonymous"
-        />
         <script type="module" src={getAssetUrl("/assets/main.js")} />
       </body>
     </html>
   );
 }
 
-// Shared site footer for the full Layout and the ErrorLayout, so the links back to
-// the original Billet repo live in one place for a fork to replace.
+// Shared site footer for the full Layout and the ErrorLayout, so both stay in
+// step.
 function SiteFooter() {
   return (
     <footer>
-      <a href="https://github.com/alexpricedev/Billet">GitHub</a>
-      <span>
-        Built by <a href="https://alexprice.dev">alexprice.dev</a>
-      </span>
+      <span>{SITE_NAME}</span>
     </footer>
   );
 }
@@ -213,7 +182,7 @@ export function ErrorLayout({ title, children, nav = true }: ErrorLayoutProps) {
             <Logo />
             <span>{SITE_NAME}</span>
           </a>
-          {nav && <Nav page="" user={null} />}
+          {nav && <Nav page="" />}
         </header>
         <main>{children}</main>
         <SiteFooter />

@@ -3,7 +3,7 @@ import { init } from "./nav-menu";
 
 const markup = `
   <header>
-    <a class="logo" href="/">Billet</a>
+    <a class="logo" href="/">Writing Better</a>
     <nav data-component="nav" aria-label="Main navigation">
       <button type="button" class="nav-toggle" aria-expanded="false" aria-controls="nav-menu" hidden>
         <span class="sr-only">Menu</span>

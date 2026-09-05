@@ -1,9 +1,10 @@
 # Privacy Runbook
 
-Billet ships **privacy-clean by default**: no analytics, no advertising, no
-third-party trackers, and only strictly-necessary first-party cookies. Out of
-the box there is nothing to consent to and — under the GDPR/ePrivacy rules — no
-cookie banner is legally required.
+This app is **privacy-clean by default**: no analytics, no advertising, no
+third-party trackers, no accounts, and no server-side store. What a person
+writes is held in their own browser and never transmitted. Out of the box there
+is nothing to consent to and — under the GDPR/ePrivacy rules — no cookie banner
+is legally required.
 
 That changes the moment you add anything non-essential: an analytics script, a
 marketing pixel, an embedded video, an A/B tool, or any code that writes to
@@ -13,24 +14,31 @@ default posture, the exact trigger for needing consent, and how to wire up the
 [`@alexpricedev/billet-cookie-consent`](https://github.com/alexpricedev/billet-cookie-consent)
 package plus a privacy policy when you cross that line.
 
-Billet is a framework. It cannot ship your privacy policy for you — the copy
-depends entirely on what *your* deployment collects. What it can do is stay clean
-by default and hand you the pattern.
+No repository can ship your privacy policy for you — the copy depends entirely
+on what *your* deployment collects. What this one can do is stay clean by
+default and hand you the pattern.
 
 ## 1. What's privacy-clean by default
 
 | Area | Default state | Where |
 |---|---|---|
 | Analytics | None. `analytics.ts` is a mock (`getVisitorStats()` returns a fake count); `/api/stats` is unused | [`src/server/services/analytics.ts`](../src/server/services/analytics.ts) |
-| Cookies | Only strictly-necessary: `session_id` (auth) and `flash_*` (transient/OAuth state), all HMAC-signed, `HttpOnly`, `SameSite=Lax`, `Secure` in production | [`sessions.ts`](../src/server/services/sessions.ts), [`utils/flash.ts`](../src/server/utils/flash.ts) |
-| Client storage | None. No `localStorage`/`sessionStorage`/`IndexedDB` anywhere in `src/client/` | — |
+| Cookies | None. There is no session, no auth, and no flash state, so the app sets no cookie of its own | — |
+| Server-side data | None. No database, no user records, no request persistence | — |
+| Client storage | The visitor's **own writing**, in their **own browser**. It is never sent anywhere, and nothing reads it but the page they typed it into | `src/client/` |
 | Fonts | Self-hosted (`font-src 'self'`) — no Google Fonts, no external font CDN | [`security-headers.ts`](../src/server/utils/security-headers.ts) |
 | Third-party egress | `connect-src 'self'` blocks XHR/fetch/beacon to other origins | [`security-headers.ts`](../src/server/utils/security-headers.ts) |
 | Request logging | No IP, user-agent, headers, or request bodies logged in the request path | [`services/logger.ts`](../src/server/services/logger.ts) |
 
-Because these cookies are strictly necessary (session, security, transient
-post-redirect-get state), they are **exempt** from consent under the ePrivacy
-Directive — but they still need **disclosure** in a privacy policy (see §4).
+Storing a user's own document so the app can hand it back to them is
+functionality they asked for, not tracking: it is strictly necessary to the
+service they requested, so it is **exempt** from consent under the ePrivacy
+Directive. It still needs **disclosure** (see §4), and the disclosure is a
+selling point — say plainly that the writing stays on the device.
+
+The exemption is narrow, and it is about *purpose*, not *mechanism*. The moment
+something in `localStorage` exists to profile the visitor rather than to serve
+them their own content, it needs consent like anything else.
 
 ## 2. The trigger: when you actually need a consent banner
 
@@ -45,14 +53,15 @@ any of:
 - Any client code writing to `localStorage`/`sessionStorage`/`IndexedDB` for a
   non-essential purpose
 
-**Strictly-necessary cookies never need consent** — Billet's `session_id` and
-`flash_*` stay banner-free. The rule is *behavioural*: what your site does before
+**Strictly-necessary storage never needs consent** — the visitor's own saved
+writing stays banner-free. The rule is *behavioural*: what your site does before
 the user interacts, not whether a banner is on screen.
 
 ## 3. Wire up the consent banner
 
 Use [`@alexpricedev/billet-cookie-consent`](https://github.com/alexpricedev/billet-cookie-consent) —
-vanilla DOM, zero dependencies, scoped CSS tokens, designed to drop into Billet.
+vanilla DOM, zero dependencies, scoped CSS tokens, and written for this tree's
+upstream, so it drops into the same server-JSX + islands model.
 The package README is the source of truth; adapt snippets to this repo's
 controller/template signatures. Read it first:
 
@@ -97,7 +106,7 @@ document.addEventListener("cc:consent-granted", (e) => {
 });
 
 // "Manage cookies" trigger — data attribute, never inline onclick, so it fits
-// Billet's server-JSX + islands model.
+// this app's server-JSX + islands model.
 for (const el of document.querySelectorAll<HTMLElement>("[data-cc-open-prefs]")) {
   el.addEventListener("click", () => CookieConsent.current()?.show());
 }
@@ -134,10 +143,10 @@ export const home = {
 {props.analytics && <script src="https://plausible.io/js/script.js" defer />}
 ```
 
-> Only import `parseConsent` once you have a real script to gate — Billet's
+> Only import `parseConsent` once you have a real script to gate — this app's
 > `noUnusedLocals` lint will reject an unused import. Defer §4 until then.
 
-**Theming** — the banner ships in its own default look. Map Billet's design
+**Theming** — the banner ships in its own default look. Map this app's design
 tokens onto the `--cc-*` variables on `[data-cc-root]` (in your global CSS) so it
 matches the site; nothing leaks out of that scope. See the package README's
 Theming section for the full token list.
@@ -157,9 +166,8 @@ A consent banner without a policy is non-compliant. If you add tracking, add a
 must disclose, at minimum:
 
 1. **Controller identity** — legal/entity name, postal address, privacy contact
-2. **Data categories** — what you collect (account, usage, IP/technical, payment…).
-   With `AUTH_MODE=password` this includes an authentication credential: the
-   stored argon2id hash of the user's password, plus `email_verified_at`
+2. **Data categories** — what you collect (usage, IP/technical, payment…). As
+   shipped the answer is *nothing*: say so, and say where the writing lives
 3. **Processing purposes** — why, per category
 4. **Lawful basis** — GDPR Art. 6 per purpose (consent, contract, legitimate interest…)
 5. **Recipients / processors** — name them (e.g. your analytics vendor, host), and any non-EU/UK transfers + safeguards
@@ -168,14 +176,14 @@ must disclose, at minimum:
 8. **Cookies & tracking** — inline or link to a cookie notice
 9. **Last-updated date** — visible at the top
 
-Link it from the footer on every page, keep it reachable without login, name
+Link it from the footer on every page, keep it reachable to everyone, name
 specific partners (not vague categories), and update the date when it changes.
 
 ## 5. Global Privacy Control (GPC)
 
 GPC is a browser signal (`Sec-GPC: 1` header / `navigator.globalPrivacyControl`)
 that legally means "do not sell or share my data" in California, Colorado, and
-others. Billet does not read it because there is nothing to suppress by default.
+others. This app does not read it because there is nothing to suppress.
 
 Once you add tracking, honour it:
 
@@ -197,8 +205,8 @@ you add one:
   [`security-headers.ts`](../src/server/utils/security-headers.ts) — keep the
   default `connect-src 'self'` as tight as possible.
 - **Prefer self-hosting** fonts, libraries, and icons over CDN loads.
-- **Pin with Subresource Integrity** on stable URLs (as Billet already does for
-  the Lottie script) so a compromised CDN can't swap the file.
+- **Pin with Subresource Integrity** on stable URLs so a compromised CDN can't
+  swap the file.
 - **Gate non-essential scripts behind consent** (§3, Step 4).
 - **Re-audit periodically** — list every contacted domain in DevTools' network
   panel and justify each one.
@@ -210,35 +218,23 @@ you add one:
 ## 7. Data minimisation & logging
 
 Collect only what a specific purpose needs, keep it only as long as needed, and
-keep it out of logs. Billet's request path already logs no PII — preserve that:
+keep it out of logs. The request path already logs no PII — preserve that:
 
 - **Don't log IPs, user-agents, headers, or request bodies** in production. Use
   `log.*(category, message)` from [`services/logger.ts`](../src/server/services/logger.ts)
-  with non-PII messages. This matters more in password mode: the bodies of
-  `POST /login`, `/signup`, `/reset-password`, and `/account/password` all carry
-  a plaintext password. Nothing in the request path logs them today — don't add
-  a body dump to debug a form.
+  with non-PII messages. Nothing in the request path logs a body today — don't
+  add a dump to debug a form, least of all one carrying someone's draft.
 - **Don't store raw IPs.** The rate-limit middleware keys an in-memory map by IP
   and never persists it — keep it that way if you wire it into routes.
 - **Redact secrets and personal data** before logging; separate identifiers from
   behavioural data; set and enforce retention windows on anything you do store.
-- **Expired rows are swept hourly**, not left to accumulate.
-  [`services/cleanup.ts`](../src/server/services/cleanup.ts) starts a timer from
-  `main.ts` that deletes expired `user_tokens` and `sessions`, plus — with
-  `TEAMS_ENABLED=true` — expired invites that were never accepted. Nothing reads
-  an expired row either way (every query filters `expires_at`), so this is
-  purely a retention measure: a spent magic-link token keeps a live-looking hash,
-  and a lapsed invite keeps the invitee's email address. Accepted invites are
-  kept deliberately as the record of who joined via whom. **A new table with an
-  expiry needs its own sweep added there** — the runbook's "enforce retention
-  windows" line is that file, and nothing else will notice the omission.
-
-> Framework maintainer note: `ConsoleLogProvider`
-> ([`email-providers/console.ts`](../src/server/services/email-providers/console.ts))
-> logs the full outbound email — recipient address and the single-use URL, be it
-> a magic-link sign-in, an address confirmation, or a password reset — to stdout. It is a dev provider; make sure your production `EmailService` wiring
-> ([`email.ts`](../src/server/services/email.ts)) never selects it, or those land
-> in platform logs.
+- **Retention is trivially satisfied while there is nothing to retain.** Adding
+  the first server-side store is what creates the obligation: a table with an
+  expiry needs a sweep that enforces it, and nothing else will notice the
+  omission.
+- **Give the user a way out of their own browser storage.** The counterpart to
+  "we keep nothing" is that they can clear what they keep: an explicit erase
+  action, and an export before it.
 
 ## 8. Verify
 
@@ -264,7 +260,7 @@ Then in a browser (or the `/browse` skill):
 Deliberately **not** shipped, and why:
 
 - **A bundled privacy policy page** — the copy is deployment-specific (what *you*
-  collect, under what basis). Billet stays clean by default and gives you §4 as
+  collect, under what basis). The default stays clean and gives you §4 as
   the template.
 - **A consent banner in the default build** — legally unnecessary with zero
   non-essential storage, and shipping one would train users to click through a

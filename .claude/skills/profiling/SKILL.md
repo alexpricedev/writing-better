@@ -9,7 +9,7 @@ Bun 1.4 can emit profiles as Markdown instead of the binary formats that need
 Chrome DevTools — which means you can read them directly. Always measure before
 rewriting for performance; this repo has already banked one decision that way
 (sync compression stays: 18–95µs per response at realistic page sizes, three
-orders of magnitude below a database query).
+orders of magnitude below the network round trip that delivered the request).
 
 ## CPU: where the time goes
 
@@ -57,7 +57,7 @@ build to a scratch dir — never to `dist/assets`, which the dev server serves.
   on the same host. `scripts/benchmark.ts` warns on a recording gap or a
   hardware mismatch for a reason: a container rehosted onto a different CPU
   between recordings once produced a phantom 34% regression.
-- Microsecond-scale wins next to a millisecond database query are not wins.
+- Microsecond-scale wins next to a millisecond of network or disk are not wins.
   State the denominator when reporting a finding.
 - Don't commit profile output; it belongs in the PR description or a scratch
   file, not the tree.

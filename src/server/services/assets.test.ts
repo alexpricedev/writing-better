@@ -132,7 +132,6 @@ describe("isBundleFilename", () => {
   test("recognises the bundles the build produces", () => {
     expect(isBundleFilename("main.css")).toBe(true);
     expect(isBundleFilename("main.js")).toBe(true);
-    expect(isBundleFilename("captcha.js")).toBe(true);
   });
 
   test("rejects anything else under /assets/", () => {

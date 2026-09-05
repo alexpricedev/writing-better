@@ -1,24 +1,25 @@
 # Adding a page
 
-Worked example: a `/dashboard` page. Read `src/server/controllers/app/projects.tsx` and
-`src/server/templates/projects.tsx` alongside this — they're the fullest example in the repo
-(list, create, delete, auth, flash messages, a Preact island).
+Worked example: a `/dashboard` page. Read `src/server/controllers/app/home.tsx` and
+`src/server/templates/home.tsx` alongside this — they are the whole pattern at its smallest.
 
 ## 1. Service — `src/server/services/dashboard.ts`
 
-Only if the page needs data. Export the functions and the types together; the type is what the
-controller and template both import.
+Only if the page needs data the server can compute. Anything belonging to the visitor lives in
+their browser instead — see the skill's "Persistence" section.
+
+Export the functions and the types together; the type is what the controller and template both
+import.
 
 ## 2. Template — `src/server/templates/dashboard.tsx`
 
 Takes fully resolved data as props, wrapped in the layout:
 
 ```tsx
-<Layout title="Dashboard" name="dashboard" user={user} csrfToken={csrfToken}>
+<Layout title="Dashboard" name="dashboard">
 ```
 
-`name` sets `data-page` on `<body>`, which is what dispatches the client script in step 6. Any
-form that POSTs needs `<CsrfField token={csrfToken} />`.
+`name` sets `data-page` on `<body>`, which is what dispatches the client script in step 6.
 
 This renders once on the server and never hydrates, so don't reach for `useState` here — it's the
 same Preact runtime the islands use, but the output is a string. Write SVG attributes in kebab-case
@@ -59,8 +60,8 @@ Multiple methods, or anything that must reject others with a 405:
 "/dashboard": createRouteHandler({ GET: dashboard.index, POST: dashboard.create }),
 ```
 
-Route params are typed through the handler — `projects.destroy<"/projects/:id/delete">` in
-`app.tsx` is the pattern to copy.
+Route params are typed through the handler: declare the method as
+`show<T extends string>(req: BunRequest<T>)` and Bun infers `req.params` from the route pattern.
 
 ## 6. Client script — `src/client/pages/dashboard.ts`
 

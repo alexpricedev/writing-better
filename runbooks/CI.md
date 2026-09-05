@@ -1,6 +1,6 @@
 # CI & merge protection Runbook
 
-Billet runs lint, type-check, build, and the full test suite on every pull
+This repo runs lint, type-check, build, and the full test suite on every pull
 request via GitHub Actions ([`.github/workflows/ci.yml`](../.github/workflows/ci.yml)),
 plus a dependency audit on its own schedule
 ([`.github/workflows/audit.yml`](../.github/workflows/audit.yml)).
@@ -20,7 +20,7 @@ Three jobs, chained so a failure short-circuits the rest:
 |---|---|---|
 | `Lint & Typecheck` | `bun run check` | — |
 | `Build` | `bun run build` | `Lint & Typecheck` |
-| `Tests` | `bun run test` against a Postgres service | `Build` |
+| `Tests` | `bun run test` — the full suite, no services required | `Build` |
 
 The job **names** above are exactly the check "contexts" GitHub sees — you'll
 reference them by name in §2.
@@ -28,27 +28,22 @@ reference them by name in §2.
 **Every job pins Bun** via `bun-version-file: .bun-version`. Without it
 `oven-sh/setup-bun` installs the latest release, which means the toolchain under
 CI changes on Bun's release schedule rather than on a commit — and this app is
-built on `Bun.SQL`, `Bun.password`, and Bun's CSS bundler, so a build can go red
+built on Bun's HTTP server, JSX transform, and CSS bundler, so a build can go red
 with nothing in the diff to explain it. `.bun-version` and the `engines.bun`
 floor in `package.json` are the same number; bump both together, in a commit
 whose CI run is the evidence the new version works.
 
-> **The `Tests` job env is deliberately generic** — `APP_NAME: CI Test`, with
-> `POSTGRES_DB` / `DATABASE_URL` on `ci-test` — so a fork inherits nothing it has
-> to rename. Tests read `APP_NAME` from the environment rather than asserting a
-> literal, so changing it is safe if you'd rather see your own name in CI output.
+> **The `Tests` job needs no services and no secrets.** There is no database to
+> stand up, and every variable the suite reads is pinned by
+> `src/server/test-utils/test-env.ts`, which `bunfig.toml` preloads into each
+> test file.
 
-The `Tests` job is tuned in two ways a fork should keep:
+The `Tests` job is tuned in one way a fork should keep:
 
-- **The Postgres cluster runs in RAM** (`PGDATA: /dev/shm/pgdata`, plus
-  `--shm-size=1g` so the container has room for it). `cleanupTestData` truncates
-  between tests, and on a runner's disk each truncate waits on an fsync — a
-  runner was ~13× slower than a laptop before this. Test data is disposable, so
-  the durability those fsyncs bought was worth nothing.
 - **`TEST_TIMEOUT_MS: "1800000"`** raises the whole-run cap in
   `src/server/test-utils/run-tests.ts` from its 10-minute default. That cap exists
   to catch a run that has stopped making progress, not to enforce a speed: a runner
-  is slower than a laptop even with the database in RAM, and a run killed at the
+  is slower than a laptop, and a run killed at the
   wire counts every test in it as lost — which reads as a broken test rather than
   the timing accident it is. Per-test timeouts are Bun's own `--timeout`.
 

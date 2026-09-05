@@ -6,20 +6,15 @@ import { clientKey } from "./client-ip";
  * The buckets a request can be counted against.
  *
  * A budget is only a budget if nothing else spends it. Keyed on the address
- * alone, every limit in the app shared one counter — so five `/api/*` reads
- * left the next `/login` POST from that address over the auth limiter's 5, and
- * one cheap unauthenticated GET per attempt was enough to lock a whole NAT out
- * of signing in. The bucket name is half the key, so each budget is now spent
- * only by the requests it describes.
+ * alone, every limit in the app shared one counter, so a burst against one
+ * route spent the budget of every other. The bucket name is half the key, so
+ * each budget is now spent only by the requests it describes.
  *
- * Deliberately coarse. `auth` is one bucket across every credential and
- * mail-sending form (`/login`, `/signup`, `/forgot-password`, `/reset-password`,
- * `/account/password`, `/auth/verify*`, `/team/invites`, `/invites/accept`)
- * because that is the budget those routes have always shared: an attacker who
- * can spread guesses over four endpoints has four times the budget, and the
- * limits differ only in size, not in what they are protecting.
+ * Deliberately coarse: a bucket is a class of cost, not a route. Add one only
+ * when a new class of cost appears — an endpoint that sends mail or does real
+ * work per request — rather than to give one route its own allowance.
  */
-export type RateLimitBucket = "auth" | "api-read" | "api-write";
+export type RateLimitBucket = "api-read" | "api-write";
 
 const requestLog = new Map<string, number[]>();
 

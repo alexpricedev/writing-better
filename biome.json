@@ -48,7 +48,7 @@
       }
     },
     {
-      "includes": ["src/client/style.css", "src/client/pages/home.css"],
+      "includes": ["src/client/style.css"],
       "linter": {
         "rules": {
           "complexity": {
@@ -68,11 +68,7 @@
       }
     },
     {
-      "includes": [
-        "src/server/database/cli.ts",
-        "src/server/database/seed.ts",
-        "src/server/test-utils/bootstrap.ts"
-      ],
+      "includes": ["src/server/test-utils/run-tests.ts"],
       "linter": {
         "rules": {
           "suspicious": {

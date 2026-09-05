@@ -2,14 +2,14 @@
 // (sitemap, structured data). Templates and controllers import from here so the
 // canonical host, name, and description can't drift across the codebase.
 
-export const SITE_URL = "https://billet.alexprice.dev";
-export const SITE_NAME = "Billet";
+export const SITE_URL = "https://writing-better.example.com";
+export const SITE_NAME = "Writing Better";
 export const SITE_DESCRIPTION =
-  "Guardrails for your AI coding agents — a full-stack TypeScript starter on Bun";
+  "A free writing app. Your work stays in your browser.";
 
-// Public, indexable routes included in the sitemap. Private or noindex routes
-// (/login, /admin), API endpoints, and auth callbacks are intentionally omitted.
-export const SITEMAP_PATHS = ["/", "/stack", "/forms", "/projects"] as const;
+// Public, indexable routes included in the sitemap. API endpoints and any
+// noindex route are intentionally omitted.
+export const SITEMAP_PATHS = ["/"] as const;
 
 const absolute = (path: string): string => new URL(path, SITE_URL).href;
 
@@ -41,24 +41,15 @@ const AI_CRAWLERS = [
   "CCBot",
 ] as const;
 
-// Private surfaces kept out of every crawler's reach.
-const ROBOTS_DISALLOW = [
-  "/admin",
-  "/account",
-  "/api/",
-  "/auth/",
-  // Private even when TEAMS_ENABLED is off, where they 404 anyway.
-  "/team",
-  "/invites/",
-] as const;
+// Non-content surfaces kept out of every crawler's reach.
+const ROBOTS_DISALLOW = ["/api/"] as const;
 
 // Content-Signal (an emerging IETF AI Preferences / IAB Tech Lab proposal)
 // declares downstream-use consent explicitly for crawlers that honour it.
 const CONTENT_SIGNAL = "Content-Signal: search=yes, ai-input=yes, ai-train=yes";
 
-// Builds the /robots.txt body. Billet is built for AI coding agents, so the
-// posture is deliberately open: search engines and the major AI crawlers are
-// all allowed, with only private surfaces disallowed.
+// Builds the /robots.txt body. The posture is deliberately open: search engines
+// and the major AI crawlers are all allowed, with only the API disallowed.
 export const buildRobotsTxt = (): string => {
   const group = (agents: readonly string[]): string =>
     [
@@ -69,8 +60,7 @@ export const buildRobotsTxt = (): string => {
     ].join("\n");
 
   return [
-    "# Billet is built for AI coding agents, so search engines and AI crawlers",
-    "# are welcome. Only private surfaces are disallowed.",
+    "# Search engines and AI crawlers are welcome. Only the API is disallowed.",
     "",
     group(["*"]),
     "",
@@ -82,8 +72,7 @@ export const buildRobotsTxt = (): string => {
 };
 
 // Web app manifest (spec: resilience/pwa-manifest). `name`/`short_name` follow
-// SITE_NAME so a fork is never stuck advertising "Billet" as its installed-app
-// name — updating the one constant renames it everywhere. Colours match the
+// SITE_NAME, so updating the one constant renames the installed app too. Colours match the
 // dark theme (--color-bg in style.css / THEME_COLOR in layouts.tsx). The 512px
 // icon doubles as the maskable icon; swap in a purpose-built, safe-zone-padded
 // asset if you need edge-to-edge Android adaptive icons.

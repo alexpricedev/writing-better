@@ -1,6 +1,6 @@
 version: 2
 
-# Billet is consumed by cloning or forking, so a fork gets these updates on its
+# This repo is consumed by cloning or forking, so a fork gets these updates on its
 # own copy — there is no published package to update from. Both ecosystems are
 # grouped into a single weekly PR per ecosystem: this repo has three runtime
 # dependencies, and one PR per bump would be more review than signal.

@@ -15,13 +15,12 @@ describe("robots.txt Controller", () => {
     expect(body).toContain("Allow: /");
   });
 
-  test("disallows private surfaces for every group", async () => {
+  test("disallows the API for every group", async () => {
     const body = await robotsTxt.index().text();
 
-    expect(body).toContain("Disallow: /admin");
-    expect(body).toContain("Disallow: /account");
-    expect(body).toContain("Disallow: /api/");
-    expect(body).toContain("Disallow: /auth/");
+    // Once per group: the wildcard and the named-crawler group. A named
+    // user-agent group fully replaces the wildcard, so the rule has to repeat.
+    expect(body.match(/Disallow: \/api\//g)).toHaveLength(2);
   });
 
   test("calls out named AI crawlers explicitly", async () => {

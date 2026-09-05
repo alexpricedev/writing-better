@@ -26,11 +26,10 @@ describe("Sitemap Controller", () => {
     }
   });
 
-  test("omits private and non-indexable routes", async () => {
+  test("omits non-indexable routes", async () => {
     const body = await sitemap.index().text();
 
-    expect(body).not.toContain("/admin");
-    expect(body).not.toContain("/login");
     expect(body).not.toContain("/api/");
+    expect(body).not.toContain("/robots.txt");
   });
 });

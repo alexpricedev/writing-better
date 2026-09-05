@@ -1,7 +1,15 @@
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 import { clearRateLimitLog } from "../../middleware/rate-limit";
-import { createMockVisitorStats } from "../../test-utils/factories";
+import type { VisitorStats } from "../../services/analytics";
 import { createMockRequest, expectJsonError } from "../../test-utils/setup";
+
+const createMockVisitorStats = (
+  overrides: Partial<VisitorStats> = {},
+): VisitorStats => ({
+  visitorCount: 1234,
+  lastUpdated: "2025-01-01T00:00:00.000Z",
+  ...overrides,
+});
 
 // Mock the analytics service
 const mockGetVisitorStats = mock(() => createMockVisitorStats());

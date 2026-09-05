@@ -1,245 +1,67 @@
-<p align="center">
-  <img src="public/logo.svg" alt="Billet Logo" width="48" />
-</p>
+# Writing Better
 
-<h1 align="center">Billet</h1>
-
-<p align="center">
-  <b>Give your AI coding agents guardrails</b>
-  <br />
-  Server-rendered JSX, light-touch JS, custom CSS — one codebase, one deploy target.<br />
-  Deterministic templates with strong types that AI agents can reason about and test with confidence.
-</p>
-
-<p align="center">
-  <a href="https://bun.sh"><img src="https://img.shields.io/badge/Bun-000000?style=for-the-badge&logo=bun&logoColor=white" alt="Bun" /></a>
-  <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals"><img src="https://img.shields.io/badge/JSX/TSX-20232a?style=for-the-badge&logo=javascript&logoColor=yellow" alt="JSX/TSX" /></a>
-  <a href="https://typescriptlang.org"><img src="https://img.shields.io/badge/TypeScript-3178c6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" /></a>
-  <a href="https://railway.com?referralCode=XB1wns"><img src="https://img.shields.io/badge/Deploy%20on-Railway-131415?style=for-the-badge&logo=railway&logoColor=white" alt="Railway" /></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License" /></a>
-</p>
-
-> **TLDR:** Full-stack TypeScript starter built for AI coding agents. Server-rendered JSX (not React), custom CSS, PostgreSQL via Bun — one process, one test runner, one deploy target. Ships with auth (magic-link or email+password, your pick), CSRF protection, rate limiting, auto-migrations, and 700+ tests. The architecture is deliberately simple (services → controllers → templates) so AI agents get fast, unambiguous feedback from strict types, zero-warning linting, and a test suite that runs in seconds. Deploy anywhere you can run `bun run start`.
->
-> — *Claude Opus 4.6*
-
-<p align="center"><a href="https://github.com/alexpricedev/Billet?tab=readme-ov-file#quick-start"><b>Get started →</b></a></p>
-
----
-
-## Why Billet?
-
-> **Billet** (noun): A semi-finished piece of steel, shaped and ready to be worked into something specific. Named for Sheffield — the Steel City, where crucible steel was invented.
-
-Left to their own choices, AI coding agents will reach for what they know best: React with Next.js. The result is a thick-frontend app split across client and server, locked into a specific ecosystem, requiring multiple test systems to simulate browser state, and unnecessarily complex and costly to deploy.
-
-Billet takes the opposite approach. It's a single-instance server-rendered app with light-touch client-side JavaScript. Templates are deterministic functions of their props — given the same input, they produce the same HTML. This makes them trivial to test in a single unified system without browser simulation. One codebase, one test runner, one deploy target.
-
-This isn't a limitation. It's a deliberate architectural choice that plays to AI's strengths: strong type information to reason about, functional input/output patterns, and a feedback loop (write code → run tests → see results) that works in seconds, not minutes.
-
-> 📝 For the longer story behind why Billet works this way — the fat front-end, RLS, and the case for a real server — read [**Boring on purpose**](https://alexprice.dev/writing/boring-on-purpose).
-
-### Capture your backpressure
-
-AI agents work best when they get told they're wrong immediately. Not by you — by the toolchain. Type errors, failing tests, lint warnings, broken builds — that's [backpressure](https://latentpatterns.com/principles), and it's the single most important thing you can invest in when working with agents. Every automated check that catches a mistake is one less time you have to context-switch back in to fix something a machine should have caught.
-
-When you do have to step in and rescue an agent, don't just fix the output and move on. Ask why it went wrong and close that gap. Add a type. Write a test. Tighten a schema. The goal isn't zero failures — it's zero repeat failures. Every rescue you engineer away is time you get back.
-
-Billet is built around this idea: strict TypeScript, zero-warning linting, deterministic templates, and a test suite that runs in seconds. The architecture itself is the feedback loop.
-
-### When Billet isn't the right fit
-
-Billet is built for server-rendered apps with light client-side interactivity. If your project needs a highly reactive, state-driven UI — real-time collaborative editing, complex drag-and-drop interfaces, rich data visualisations — you're better off with a full client-side framework like React or Svelte from the start. Billet lets you opt in to client-side frameworks per page, but if most of your pages need one, the thin-frontend approach is working against you rather than for you.
+A free writing app, built as a single Bun process. Your work stays in your browser — the server
+stores nothing about you.
 
 ---
 
 ## What's Included
 
-Auth, security, database, testing, linting — these are the rails. They're solved so the agent can focus on your custom logic instead of bugging you with questions about tech choices and security fundamentals.
+### No accounts, no database
 
-### Authentication
+There is no sign-in, no user record, and no server-side store. Whatever a person writes lives in
+their own browser (`localStorage` / IndexedDB), which is what makes the app free to run and free
+of the obligations that come with holding other people's writing: no breach surface, no data
+export requests, no backups to lose.
 
-Two complete auth flows, chosen with one environment variable. `AUTH_MODE` defaults to `magic-link`;
-set it to `password` for conventional email-and-password credentials. The two are mutually exclusive —
-offering both at once would mean every account has two ways in, and the weaker one sets the ceiling.
-
-- **Magic-link login** (default) with HMAC-protected tokens and expiry — no passwords to store, hash, or reset
-- **Password login** with argon2id hashing (via `Bun.password`, no new dependency), a full reset-by-email flow, and change-password on `/account`
-- **Email verification** — `users.email_verified_at` records when an address was proven, with a fixed reminder banner until it is. Nothing is gated on it; forks add their own gating
-- **Session management** with 30-day sessions, automatic renewal, and secure cookie handling (HttpOnly, Secure, SameSite)
-- **Guest sessions** that auto-create for unauthenticated visitors — useful for carts, preferences, or any state you want before login
-- **Admin middleware** with role-based route protection and a dedicated `/admin` route namespace
-- **Org-level user management** behind `TEAMS_ENABLED` (off by default) — a `/team` page to invite people by email, see the member list, change org roles, and remove people. `organization_members.org_role` is a separate axis from `users.role`, so an org owner is not a platform admin; migration `008` adds three tables and alters none, so a fork that won't use it can drop it without touching account data
-- **Pluggable email providers** — ships with a console provider for development; add Resend or any custom provider via a simple interface
+The trade is real and worth stating in the product: clearing site data loses the work, and there
+is no sync between devices.
 
 ### Security
 
-- **CSRF protection** using the synchronizer token pattern with timing-safe comparison and origin validation. A token that has aged out but still verifies against the session secret is recognised as stale rather than forged, so the form is re-rendered with a fresh token and the user's input intact instead of a dead-end 403
-- **Rate limiting** middleware with configurable sliding-window limits per IP
-- **Signup spam defense** on every signed-out auth form — an always-on honeypot and per-IP rate limit, plus an optional first-party proof-of-work captcha (no third party, account, or extra secret; off by default, enable with `CAPTCHA_ENABLED`)
-- **Session fixation prevention** — sessions are regenerated on login, and a password change or reset invalidates the other sessions
-- **Password storage** — argon2id with a per-hash salt, deliberately unpeppered so a `CRYPTO_PEPPER` rotation stays recoverable; password reset gives identical answers for known and unknown addresses, and so does sign-in except for accounts carried over from magic-link mode, which are told they have no password yet (see [SECURITY.md](SECURITY.md) for that trade-off)
-- **Environment validation** at startup — the server fails fast with clear error messages if required variables are missing
-- **Response hardening** — security headers on every response (nosniff, frame/clickjacking protection, an enforcing Content Security Policy, Permissions-Policy, HSTS in production), plus `/.well-known/security.txt` and Subresource Integrity on third-party scripts — see [runbooks/SECURITY.md](runbooks/SECURITY.md)
+- Security headers and a Content Security Policy on **every** response, set centrally rather than
+  per route
+- HSTS in production, `frame-ancestors 'none'`, `object-src 'none'`, locked-down `base-uri`
+- Per-IP rate limiting on the API, with a proxy-aware client-IP source (`TRUST_PROXY`)
+- A `/.well-known/security.txt` with a configurable reporting address
+- Error pages that never leak a stack trace, and a `Bun.serve` `error()` backstop so the dev error
+  page can't reach production
 
-### Database
+### SEO and resilience
 
-PostgreSQL through Bun's built-in `Bun.SQL` — no ORM, no driver dependency.
-
-- **Auto-migrations on startup** — pending migrations run before the server accepts requests; if one fails, the server won't start
-- **Migration CLI** for manual operations (`migrate:up`, `migrate:status`, `migrate:create`)
-- **Seed script** scaffold for development data (`bun run seed`)
-- **Parameterised queries** throughout — no string concatenation, no SQL injection surface
+- Canonical URLs, Open Graph and Twitter cards, JSON-LD, a sitemap, `robots.txt`, `llms.txt`
+- A web app manifest generated from one `SITE_NAME` constant
+- Error and maintenance pages that ship **no** client JavaScript, so they render when the app is
+  degraded
+- Graceful SIGTERM/SIGINT draining, so a deploy doesn't sever in-flight responses
 
 ### Testing
 
-The "deterministic templates, test with confidence" tagline isn't a marketing claim — it's backed by infrastructure.
-
-- **760+ tests across 70 files** covering controllers, services, middleware, utilities, and client scripts
-- **No browser simulation needed** — server-rendered templates are pure functions of props, testable with `renderToString()` and string assertions
-- **Real database testing** for services — tests run against PostgreSQL with table truncation for isolation
-- **Mock-based controller tests** that verify HTTP responses (status codes, headers, HTML content) without touching the database
-- **Client script tests** using happy-dom for DOM globals, with page lifecycle isolation
-- **A one-line test environment** — `.env.test` carries `DATABASE_URL` and nothing else; every other variable is pinned by a preload (`src/server/test-utils/test-env.ts`), so your dev `.env` can't change what the suite sees no matter which command starts it
-
-
-Run the full suite: `bun run test` — around 15 seconds on four cores, since files run in
-parallel with a database per worker.
-
-### Code Quality
-
-- **Biome** linting with zero-warning enforcement (`--max-warnings 0`) — no `any` types, no `console` statements, no unused variables
-- **TypeScript** strict mode with `noUnusedLocals` and `noUnusedParameters`
-- **Husky** pre-commit hooks that run lint and typecheck before every commit
-- **GitHub Actions CI** — lint, build, and the full test suite run on every PR (`.github/workflows/ci.yml`); gate merges behind them with required status checks (see [runbooks/CI.md](runbooks/CI.md))
-- **Pinned toolchain** — `.bun-version` and `engines.bun` fix the Bun version, and CI installs from the same file, so the toolchain changes on a commit rather than on Bun's release schedule
-- **Dependency audit** — `bun run audit` fails on high-severity advisories, run on every PR and weekly on a schedule (`.github/workflows/audit.yml`), with Dependabot opening the routine bumps
-- **Structured logging** via `src/server/services/logger.ts` — replaces `console.*` with levelled output (info, warn, error)
+- `bun test` under `--isolate`, one worker per core
+- happy-dom for client tests, with Bun's native `Request`/`Response` restored
+- A real-browser smoke test (`bun run test:browser`) that catches what happy-dom can't: CSP
+  blocks, an unapplied stylesheet, a bundle that parses but doesn't run
 
 ### Frontend
 
-- **Preact JSX as a template engine** — server-rendered to a string, no hydration, no client-side framework runtime on the page by default. One JSX runtime across server and client, so there's no second React toolchain to reason about
-- **Bun CSS bundler** with `@import` resolution, CSS nesting, and minification — no external CSS tooling needed
-- **Opt-in interactivity** — sprinkle in any client-side framework per page (ships with a Preact island example loaded via CDN import map)
-- **Page lifecycle system** — `registerPage()` / `PageController` pattern with `init()` and `cleanup()` for per-page JS
-- **Cookie-based flash messages** — HMAC-signed, single-use cookies for post-redirect-get feedback (success banners, validation errors)
-- **Accessibility baseline** — semantic landmarks, labelled form controls, a keyboard focus ring, reduced-motion support, announced flash messages, and captioned data tables out of the box — see [runbooks/ACCESSIBILITY.md](runbooks/ACCESSIBILITY.md)
-- **Privacy-clean by default** — no analytics, no trackers, no third-party cookies; only strictly-necessary first-party cookies, so no consent banner is legally required until you add tracking — see [runbooks/PRIVACY.md](runbooks/PRIVACY.md) for the consent-banner and privacy-policy pattern
-- **Asset cache-busting** in production — MD5-hashed filenames with immutable `Cache-Control` headers
-
----
-
-## Built for AI Agents
-
-The "designed for AI agents" tagline is the reason Billet exists, so here's what that means in practice.
-
-### CLAUDE.md and skills — the agent's guide
-
-The repo ships a deliberately short [`CLAUDE.md`](CLAUDE.md) plus a set of skills in `.claude/skills/`. `CLAUDE.md` covers only what an agent can't learn by reading the repo — the gotchas: two JSX runtimes with no hydration, why service tests mock the database module before importing, why `bun test` isn't the test command, where security headers actually come from. Everything procedural lives in skills that load on demand:
-
-| Skill | Loads when |
-|---|---|
-| `adding-a-feature` | Wiring a page, endpoint, or migration through every layer |
-| `writing-tests` | Adding or fixing a test — one reference per module type |
-| `verifying-changes` | Running lint, typecheck, and the test suite, and reading their failures |
-
-This split follows Anthropic's [context engineering guidance for Claude 5 models](https://claude.com/blog/the-new-rules-of-context-engineering-for-claude-5-generation-models): keep the always-loaded context small and specific to your codebase, and use progressive disclosure for the rest.
-
-### Why this architecture works for agents
-
-AI agents are good at following patterns with fast, unambiguous feedback. Billet is designed around that:
-
-- **Deterministic templates.** Given the same props, a template produces the same HTML. Agents can write a template, call `renderToString()`, and assert on the output — no browser, no async rendering, no timing issues.
-- **Strong types as context.** Types flow from service to controller to template. When an agent's code doesn't typecheck, it gets an error with a file path, line number, and expected type — enough to self-correct without human intervention.
-- **Fast feedback loops.** `bun run test` completes in seconds. `bun run check` (lint + typecheck) catches issues before they compound. Agents can write-test-fix in tight cycles.
-- **Separation of concerns.** Services own data, controllers orchestrate, templates render. Each layer is independently testable. An agent working on a controller doesn't need to understand the database schema — it works against typed service functions.
-- **Zero-ambiguity conventions.** File naming, export patterns, route registration — everything follows documented conventions. There's one right way to add a page, one right way to add an API endpoint, and it's written down.
-
-### The feedback stack
-
-Every layer catches a different class of error before a human has to:
-
-| Layer | What it catches |
-|---|---|
-| TypeScript strict mode | Type mismatches, missing properties, unused code |
-| Biome linting | Style violations, unsafe patterns, console usage |
-| Pre-commit hooks | Anything that slipped past the editor |
-| Test suite | Behavioural regressions, broken templates, bad responses |
-
-
-This is the [backpressure](#capture-your-backpressure) that keeps agents inside the guardrails.
-
-### Running several agents at once
-
-The usual way to parallelise agents is one git worktree each, and it has a sharp edge: worktrees share a single `.git` directory, and `refs/stash` lives there. The stash is one global stack across every worktree, so an agent that pops in its own checkout can silently walk off with work another agent pushed a moment ago.
-
-Billet closes that hole. `scripts/wip` snapshots to `refs/worktree/wip` — the one ref namespace git keeps per-worktree — so a snapshot is invisible to every other agent:
-
-```bash
-bun run wip save "trying the other approach"   # snapshot, working tree untouched
-bun run wip stash                              # snapshot, then revert tracked changes
-bun run wip list                               # this worktree's snapshots
-bun run wip restore                            # apply the newest, and keep it
-bun run wip drop                               # forget the newest
-```
-
-A `PreToolUse` hook in [`.claude/settings.json`](.claude/settings.json) denies `git stash` and points the agent at the table above, so this isn't a convention an agent can forget — it's enforced.
-
-The other thing worktrees share is everything in `.env`. [`.conductor/settings.toml`](.conductor/settings.toml) runs `scripts/workspace.ts provision` on setup, which gives each workspace its own port (`CONDUCTOR_PORT`), its own dev and test databases (`<base>-<workspace>`), and its own session cookie name — cookies aren't scoped by port, so two apps on localhost otherwise share one. The test database matters most: `cleanupTestData` truncates every table, so two agents on one `billet-test` fail each other's suites at random. `scripts/workspace.ts destroy` runs on archive and drops the pair, refusing any name that doesn't carry that workspace's slug. Both are no-ops in cloud workspaces. If you don't use Conductor, run `bun run scripts/workspace.ts provision` with `CONDUCTOR_WORKSPACE_NAME` and `CONDUCTOR_PORT` set, or ignore it — the defaults are unchanged.
-
----
-
-## Built to a public standard
-
-[**specification.website**](https://specification.website) is an open, platform-agnostic checklist of the technical features a good website should have — 168 specs across foundations, SEO, accessibility, security, performance, and more. Billet works through it section by section, so the boring-but-critical baseline is in place before you write a line of product code.
-
-| Section | What Billet covers |
-|---|---|
-| **Foundations** | Doctype, charset, viewport, canonical URLs, Open Graph, favicons, theme-color |
-| **SEO** | robots.txt, XML sitemap, JSON-LD, per-page metadata, an explicit indexing policy |
-| **Accessibility** | Semantic landmarks, labelled forms, focus rings, reduced motion, captioned tables |
-| **Security** | Security headers on every response, a Content Security Policy, HSTS, security.txt, Subresource Integrity, Clear-Site-Data |
-| **Agent readiness** | An llms.txt index, AI-crawler rules and Content-Signal in robots.txt, machine-readable Link headers, structured data, stable URLs |
-| **Performance** | Brotli and gzip compression, fingerprinted immutable assets, ETag revalidation with 304s, preconnect resource hints, minified bundles |
-
-[Read the full standard →](https://specification.website)
+- Server-rendered Preact templates (`preact-render-to-string`), no hydration by default
+- Preact islands in `src/client/` for the interactive parts
+- Plain CSS, no framework, no build step beyond `bun build`
 
 ---
 
 ## Quick Start
 
-You'll need [Bun](https://bun.sh) and a local [PostgreSQL](https://www.postgresql.org/) instance running. If you need help getting PostgreSQL set up, ask Claude — it'll walk you through the install for your OS.
-
-Click **[Use this template](https://github.com/new?template_name=Billet&template_owner=alexpricedev)** on GitHub to create your own repo, then:
-
 ```bash
-git clone <your-new-repo-url>
-cd <your-project>
 bun install
-```
-
-### First-time setup
-
-Open [`START_PROMPT.md`](START_PROMPT.md) with your AI coding agent. It will walk through creating your `.env` files, renaming the project, stripping the Billet starter content, and verifying everything works.
-
-Once setup is complete you can delete `START_PROMPT.md`.
-
-### Manual setup
-
-If you'd prefer to set up manually:
-
-```bash
-cp .env.example .env
-bun run generate:pepper      # copy the output into CRYPTO_PEPPER in .env
-```
-
-Add your `DATABASE_URL` to `.env` (e.g. `postgresql://localhost/myapp`), then:
-
-```bash
+cp .env.example .env    # then edit APP_NAME / APP_URL if you like
 bun run dev
 ```
 
-Visit [http://localhost:3000](http://localhost:3000) — migrations run automatically on startup.
+The app is on http://localhost:3000.
+
+Three environment variables are required — `PORT`, `APP_NAME`, `APP_URL` — and the server refuses
+to boot without them. `APP_URL` must include the port.
 
 ---
 
@@ -251,41 +73,33 @@ src/
 │   ├── main.ts                 # Entry point — routes to page controllers
 │   ├── page-lifecycle.ts       # Page init/cleanup system
 │   ├── style.css               # Global styles (CSS entry point)
-│   ├── components/             # Shared CSS (nav, layout)
+│   ├── components/             # Shared JS + CSS (nav, layout)
 │   └── pages/                  # Page-specific JS + CSS (co-located)
 │
-├── server/                     # Server-side code
-│   ├── main.ts                 # Server entry point
-│   ├── routes/
-│   │   ├── app.tsx             # View routes (HTML)
-│   │   ├── api.ts              # API routes (JSON)
-│   │   └── admin.tsx           # Admin routes (protected)
-│   ├── controllers/            # Route handlers
-│   │   ├── app/                # View controllers — return HTML
-│   │   ├── api/                # API controllers — return JSON
-│   │   ├── auth/               # Auth controllers — login/signup/logout/account/reset/verify
-│   │   └── team/               # Team controllers (TEAMS_ENABLED) — dashboard/invites/members/accept
-│   ├── templates/              # Full-page JSX templates
-│   ├── components/             # Reusable server JSX components
-│   ├── services/               # Business logic & data access
-│   ├── middleware/             # Auth, CSRF, rate limiting, admin, org roles
-│   ├── utils/                  # Response helpers, crypto, env validation
-│   └── database/
-│       ├── cli.ts / migrate.ts # Migration tooling
-│       ├── seed.ts             # Development seed data
-│       └── migrations/         # Numbered migration files
-│
-└── types/                      # Global TypeScript declarations
+└── server/                     # Server-side code
+    ├── main.ts                 # Server entry point
+    ├── routes/
+    │   ├── app.tsx             # View routes (HTML)
+    │   └── api.ts              # API routes (JSON)
+    ├── controllers/            # Route handlers
+    │   ├── app/                # View controllers — return HTML
+    │   └── api/                # API controllers — return JSON
+    ├── templates/              # Full-page JSX templates
+    ├── components/             # Reusable server JSX components
+    ├── services/               # Business logic (assets, SEO, logging)
+    ├── middleware/             # Rate limiting, client IP
+    └── utils/                  # Response helpers, env validation, security headers
 
 scripts/
-├── wip                         # Per-worktree WIP snapshots (safe `git stash` replacement)
+├── wip                         # Per-worktree WIP snapshots
 ├── benchmark.ts                # Times the suite, checks and build; saves/compares records
-└── workspace.ts                # Per-workspace port + dev/test databases (provision/destroy)
+├── browser-smoke.test.ts       # Real-browser smoke tests (`bun run test:browser`)
+└── workspace.ts                # Per-workspace port provisioning
 
 .claude/
 ├── settings.json               # Hooks shared with every agent on the repo
 ├── hooks/
-│   └── no-shared-stash.ts      # Denies `git stash`, points at `bun run wip`
+│   └── no-shared-stash.ts      # Points at `bun run wip` instead of the shared ref
 └── skills/                     # Progressive-disclosure guides for agents
 ```
 
@@ -293,94 +107,33 @@ scripts/
 
 ## API Reference
 
-The starter ships one example resource plus a read-only stats endpoint. They exist to be
-copied or deleted — the
-conventions below are what a new endpoint should follow, and
-[`.claude/skills/adding-a-feature/references/api-endpoint.md`](.claude/skills/adding-a-feature/references/api-endpoint.md)
-is the checklist for adding one.
+One read-only endpoint ships, as the pattern to copy:
 
-> **These endpoints are unauthenticated**, like the `/projects` page they mirror — the demo lets
-> guests create projects. Anything exposing real data needs `requireAuth` from
-> `src/server/middleware/auth.ts` (or a token check for machine callers) before it ships.
+```
+GET /api/stats    → { "data": { "visitorCount": 1234, "lastUpdated": "..." } }
+```
 
 ### Conventions
 
-- **Every payload is wrapped in `data`.** A bare array or object leaves nowhere to add metadata
-  later without breaking clients.
-- **Every failure returns the same envelope**, whatever went wrong:
-  ```json
-  { "error": { "code": "invalid_body", "message": "A non-empty title is required.",
-               "fields": { "title": "Required." } } }
-  ```
-  Branch on `code` — it is stable. `message` is for a human reading the response, and `fields` is
-  present only on validation failures.
-- **Request bodies must be `application/json`** (or a `+json` media type). Anything else is a 415;
-  a body that isn't valid JSON, or that is JSON but not an object, is a 400.
-- **Rate limits are per IP**: 60 requests/minute for reads, 20 for writes, counted separately
-  from each other and from the auth forms' own budget. A 429 carries `Retry-After` in seconds.
+- Every payload is wrapped in `data`, so metadata can be added later without breaking clients
+- Every error is `{ "error": { "code", "message" } }` — assert on `code`, never on the prose
+- Every route goes through `createApiRouteHandler`, which answers a wrong method with a JSON 405
+  and an `Allow` header. A bare handler in a Bun routes map answers *every* method
+- Every controller opens with the guards in `controllers/api/request-guard.ts`: media-type and
+  body validation, id and pagination parsing, and the per-IP rate limit
 
-### Endpoints
-
-| Method | Path | Returns |
-|---|---|---|
-| `GET` | `/api/projects` | `{ data: Project[], pagination: { total, limit, offset } }` |
-| `POST` | `/api/projects` | `201` + `{ data: Project }`, with a `Location` header |
-| `GET` | `/api/projects/:id` | `{ data: Project }` |
-| `PUT` | `/api/projects/:id` | `{ data: Project }` |
-| `DELETE` | `/api/projects/:id` | `204`, no body |
-| `GET` | `/api/stats` | `{ data: VisitorStats }` |
-
-`GET /api/projects` accepts `?limit=` (1–100, default 25) and `?offset=` (default 0). Values
-outside those bounds are **rejected with a 400 rather than clamped** — a client silently handed
-100 rows when it asked for 5000 has no way to tell it received a page.
-
-`:id` must be a positive integer within Postgres `serial` range; anything else is a 400
-(`invalid_id`) and never reaches the database.
-
-```bash
-curl -X POST http://localhost:3000/api/projects \
-  -H 'Content-Type: application/json' \
-  -d '{"title":"My project"}'
-# 201 Created
-# Location: /api/projects/7
-# {"data":{"id":7,"title":"My project","created_by":null}}
-```
-
-### Status codes
-
-| Code | `error.code` | When |
-|---|---|---|
-| `400` | `invalid_id` / `invalid_json` / `invalid_body` / `invalid_limit` / `invalid_offset` | Malformed path, query, or body |
-| `404` | `not_found` | No such row |
-| `405` | `method_not_allowed` | Wrong verb — the `Allow` header names the right ones |
-| `415` | `unsupported_media_type` | `Content-Type` wasn't JSON |
-| `429` | `rate_limited` | Per-IP limit exceeded; see `Retry-After` |
+[`.claude/skills/adding-a-feature/references/api-endpoint.md`](.claude/skills/adding-a-feature/references/api-endpoint.md)
+is the checklist for adding one.
 
 ---
 
-## Works well with
+## Upstream
 
-- **[Conductor](https://conductor.build)** — runs several coding agents in parallel, one git worktree each. Billet ships a [`.conductor/settings.toml`](.conductor/settings.toml) that gives every workspace its own port, dev database, test database, and session cookie name on setup, and drops the databases again on archive, so parallel agents can't truncate each other's test data or fight over port 3000. None of it is required: the scripts no-op when `CONDUCTOR_PORT` is unset, and `scripts/wip` is plain `git worktree`, so the same protections work under any agent harness.
-
-A couple of small, zero-dependency packages built alongside Billet that drop straight in:
-
-- **[billet-cookie-consent](https://github.com/alexpricedev/billet-cookie-consent)** — GDPR-friendly cookie consent banner. Lightweight, framework-agnostic, designed to slot into a server-rendered template.
-- **[log-digest](https://github.com/alexpricedev/log-digest)** — In-memory log buffer with a pluggable digest sink. Batches `error` / `warn` / `info` entries and hands them off on an interval to email, Slack, or any custom sink — a lightweight alternative to a full observability stack for a single Bun process.
-
----
-
-## Upgrading a fork
-
-Billet is used by cloning or forking, so there's no package manager to warn you about a breaking
-change. Releases are tagged, and [CHANGELOG.md](CHANGELOG.md) records what a fork has to change in
-its own code before merging a new major version. Read it before pulling upstream.
-
-Which release you're on is recorded in [`.billet-version`](.billet-version), separately from the
-`version` in `package.json` — that field is your app's, to bump as you like. Keep the file when you
-rename the project; it's the only thing that answers "is this fix already in my tree?" without
-diffing source against a repo you may not have as a remote. Update it when you merge an upstream
-release. The file itself carries the two `curl` commands for listing upstream's tags and reading
-its CHANGELOG, so comparing needs no remote and no tooling.
+This tree began as a fork of [Billet](https://github.com/alexpricedev/Billet), with its auth,
+teams, and database layers removed. `.billet-version` records which release it came from — keep
+it, and keep it pointed at upstream: it is the only thing that answers "is this fix already in my
+tree?" without diffing source against a repo you may not have as a remote. The file carries the
+two `curl` commands for listing upstream's tags and reading its CHANGELOG.
 
 ---
 
@@ -392,73 +145,50 @@ Contributions are welcome! Please open issues or PRs.
 
 ## Deploy
 
-Billet is a single Bun process — no containers, no serverless adapters, no platform-specific runtime. Anywhere you can run `bun run start`, it'll work: Railway, Fly.io, Render, a VPS, or your own machine.
+A single Bun process — no containers, no serverless adapters, no platform-specific runtime, and
+no database to provision. Anywhere you can run `bun run start`, it'll work: Railway, Fly.io,
+Render, a VPS, or your own machine.
 
 ### Railway
 
-A `railway.json` is included with build and start commands pre-configured. Deployments typically go live in under 60 seconds.
+A `railway.json` is included with build and start commands pre-configured.
 
 1. Push to GitHub
-2. Create a new [Railway](https://railway.com?referralCode=XB1wns) project and connect your repo
-3. Add a **PostgreSQL** plugin and link it to your service — this auto-sets `DATABASE_URL`
-4. Set the remaining environment variables (see below)
-5. Deploy — Railway will build, run migrations, and start the server
-
-> **Tip:** If you're using Claude Code with the [Railway MCP server](https://docs.railway.com/guides/mcp), you can ask Claude to set up the project, add PostgreSQL, and configure environment variables for you.
+2. Create a new [Railway](https://railway.com) project and connect your repo
+3. Set the environment variables below
+4. Deploy
 
 ### Environment Variables
 
 | Variable | Required | Description |
 |---|---|---|
-| `DATABASE_URL` | Yes | PostgreSQL connection string — auto-set when you link Railway's PostgreSQL plugin to your service |
-| `CRYPTO_PEPPER` | Yes | Secret key for session tokens — run `bun run generate:pepper` to get one (see below) |
-| `APP_URL` | Yes | Your app's public URL — you'll get this from Railway after your first deploy (e.g. `https://my-app.up.railway.app`) |
-| `PORT` | No | Server port — auto-set by Railway, defaults to `3000` locally |
-| `AUTH_MODE` | No | `magic-link` (default) or `password`. Mutually exclusive; any other value stops the server at boot |
-| `CAPTCHA_ENABLED` | No | Set to `true` to add a proof-of-work captcha to the login form. Off by default; `/login` is unchanged when unset |
-| `CAPTCHA_DIFFICULTY` | No | Tunes the captcha's client-side work (search-space size). Defaults to `100000` (~sub-second for a real browser) |
-| `TEAMS_ENABLED` | No | Set to `true` for org-level user management — invite by email, member list, org roles. Off by default; `/team` and `/invites/accept` 404 when unset. Any value other than `true`/`false` stops the server at boot |
+| `APP_URL` | Yes | Your app's public URL, including the port when there is one (e.g. `https://my-app.up.railway.app`) |
+| `APP_NAME` | Yes | Display name used in page metadata |
+| `PORT` | Yes | Server port — auto-set by Railway; `3000` locally |
+| `SECURITY_CONTACT` | No | Reporting address published in `/.well-known/security.txt`. Defaults to a placeholder — set it before launch |
+| `TRUST_PROXY` | No | Set to `true` behind exactly one reverse proxy that rewrites `x-forwarded-for` (Railway does), so the rate limiter keys on the client rather than the proxy. Any value other than `true`/`false` stops the server at boot |
+| `MAINTENANCE_MODE` | No | Set to `true` to serve a 503 page with `Retry-After` for every request but `/health` |
 
-> **Generating `CRYPTO_PEPPER`:** This is a secret key used to secure session tokens. Run `bun run generate:pepper` to get a value. Use a different value for each environment (development, production, etc).
+> **SEO:** Before your first deploy, set `SITE_URL` in `src/server/services/seo.ts` to your
+> production domain — `robots.txt`, the sitemap, canonical URLs and JSON-LD are all built from
+> it. See [runbooks/SEO.md](runbooks/SEO.md).
 
-> **Email deliverability:** When sending real mail via Resend, follow [runbooks/EMAIL.md](runbooks/EMAIL.md) to set up SPF, DKIM, and DMARC — without it, magic links and password-reset mail land in spam.
+> **Security:** The HTTP hardening works out of the box, but set `SECURITY_CONTACT` and add the
+> registrar-level records before launch — see [runbooks/SECURITY.md](runbooks/SECURITY.md) for
+> the TLS, HSTS-preload, CAA, and DNSSEC steps.
 
-> **SEO:** Before your first deploy, set `SITE_URL` (and the `Sitemap:` line in `public/robots.txt`) to your production domain — see [runbooks/SEO.md](runbooks/SEO.md) for the canonical-URL config, sitemap, indexing policy, and verification steps.
+> **Privacy:** As shipped there is no analytics, no tracker, and no non-essential storage, so no
+> cookie banner is required. The moment you add analytics, ads, or embeds, you must add an opt-in
+> consent banner and a privacy policy — see [runbooks/PRIVACY.md](runbooks/PRIVACY.md). The
+> writing the app stores in the browser is the user's own and never leaves their device; that is
+> a claim the privacy policy should make explicitly.
 
-> **Security:** The HTTP hardening (security headers, CSP, HSTS, SRI) works out of the box, but set `SECURITY_CONTACT` (the `security.txt` reporting address) and add the registrar-level records before launch — see [runbooks/SECURITY.md](runbooks/SECURITY.md) for that plus the TLS, HSTS-preload, CAA, and DNSSEC steps.
-
-> **Auth mode:** Leave `AUTH_MODE` unset for magic-link auth. Set `AUTH_MODE=password` for email-and-password instead — that enables `/forgot-password`, `/reset-password`, and the change-password form on `/account`, which all 404 in magic-link mode. Switching an existing app to `password` leaves current users with no password: `/account` offers those accounts a set-password form, and `/forgot-password` covers anyone already signed out — a failed sign-in tells them so and links them there, rather than leaving them to guess at "Invalid email or password" forever. `/signup` and `/account` exist in both modes.
-
-> **Team management:** Leave `TEAMS_ENABLED` unset and nothing changes — `/team` and `/invites/accept` 404, no org is ever created, and the three tables migration `008` adds stay empty. Set it to `true` and a signed-in user can create a team, invite people by email, change their org role, and remove them. Three things are worth knowing before you turn it on. **The org role is a separate axis from `users.role`** — that one still means *platform operator* and still gates `/admin`, so making someone an org owner does not give them your admin console. **One user belongs to one org**; there is no switcher, and accepting a second invite is refused. And **core does not scope your own data by org** — the `project` table is untouched, deliberately; `requireOrgRole` hands you the resolved membership so you can scope your own queries. See [runbooks/TEAMS.md](runbooks/TEAMS.md) for the authorisation model, the invite lifecycle, and what is deliberately not shipped. Two behaviours are worth expecting: `/team` is in no navigation, so **signing in without a membership lands on `/team`** instead of `/` (and `/account` links to it once you're in a team), and **neither self-action is yours to take** — you can't change your own org role or remove yourself, because the only self-change the roles allow is a demotion out of the page you'd need to undo it. Turning the flag on over an existing database leaves every current user with no team, so they'll see the "create a team" page first.
-
-> **Signup spam:** The login form always carries a honeypot and per-IP rate limit. If bots still create accounts with random emails, set `CAPTCHA_ENABLED=true` to add a first-party proof-of-work captcha — it signs challenges with your existing `CRYPTO_PEPPER`, so there's no third party, account, or extra secret to configure.
-
-> **Privacy:** The default site needs no cookie banner (zero non-essential storage). The moment you add analytics, ads, or embeds, you must add an opt-in consent banner and a privacy policy — see [runbooks/PRIVACY.md](runbooks/PRIVACY.md) for wiring up `@alexpricedev/billet-cookie-consent`, the required policy disclosures, and GPC handling.
-
-> **CI & merge protection:** CI runs on every PR, but check results are advisory until you require them. A fork doesn't inherit branch protection, so nothing stops an auto-merge (GitHub's or Conductor's) from merging a red build — enable required status checks once per repo. See [runbooks/CI.md](runbooks/CI.md).
-
-### Database
-
-Billet uses PostgreSQL through Bun's built-in `Bun.SQL` — no ORM, no driver dependency. Migrations run automatically on server startup — pending migrations are applied before the server accepts requests. If a migration fails, the server won't start (fail-safe).
-
-A lightweight CLI is also available for manual operations:
-
-```bash
-bun run migrate:up       # Run pending migrations
-bun run migrate:status   # Show migration state
-bun run migrate:create   # Create a new migration file
-```
-
-If you don't need a database, remove the `src/server/database/` and `src/server/services/` directories and strip the DB-related routes. There's no framework coupling to undo.
+> **CI & merge protection:** CI runs on every PR, but check results are advisory until you require
+> them. Nothing stops an auto-merge from merging a red build — enable required status checks once
+> per repo. See [runbooks/CI.md](runbooks/CI.md).
 
 ---
 
 ## License
 
 MIT — free for personal and commercial use.
-
----
-
-<p align="center">
-  <i>Made with ❤️ in Sheffield, UK</i>
-</p>

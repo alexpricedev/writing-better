@@ -1,9 +1,10 @@
 # Security Runbook
 
-Billet ships a defensive HTTP baseline: a single set of security headers on
+This app ships a defensive HTTP baseline: a single set of security headers on
 **every** response, an enforcing Content Security Policy, HSTS in production,
-a `/.well-known/security.txt`, and Subresource Integrity on its one third-party
-script. Cookies and CSRF are covered separately in the root
+a `/.well-known/security.txt`, and Subresource Integrity on any third-party
+script. The application-level posture — and what having no accounts or database
+removes from the attack surface — is in the root
 [`SECURITY.md`](../SECURITY.md).
 
 This runbook covers what's applied automatically, the one required config step,
@@ -39,15 +40,15 @@ route can still override any single header (e.g. a relaxed CSP for one page).
 HSTS is intentionally withheld outside production (`NODE_ENV !== "production"`)
 so local development over plain HTTP doesn't pin `localhost` to HTTPS.
 
-One route sets an extra header of its own: **logout**
-([`controllers/auth/logout.tsx`](../src/server/controllers/auth/logout.tsx))
-sends `Clear-Site-Data: "cookies", "storage"` so the browser wipes cookies and
-client storage on sign-out — defence in depth beyond deleting the session cookie.
+No route sets an extra header of its own today. If you add one that should wipe
+what the browser holds — an "erase my writing" action, say — `Clear-Site-Data:
+"storage"` is the header to send, and it belongs in that controller rather than
+in the shared baseline.
 
 ## 2. Set the security.txt contact (required before launch)
 
 [RFC 9116](https://www.rfc-editor.org/rfc/rfc9116) `security.txt` tells
-researchers how to report a vulnerability. Billet serves it dynamically at
+researchers how to report a vulnerability. The app serves it dynamically at
 `/.well-known/security.txt` from
 [`src/server/services/security-txt.ts`](../src/server/services/security-txt.ts)
 (controller: [`controllers/app/security-txt.ts`](../src/server/controllers/app/security-txt.ts),
@@ -155,8 +156,8 @@ entirely.
   so it reads the last header entry — the hop the proxy added; otherwise every
   visitor shares the proxy's socket address and one busy user 429s everyone.
   Never set it on a deployment reached directly: the header is client-controlled
-  there, and trusting it lets an attacker walk past the `/login` limit with a
-  fresh value per request.
+  there, and trusting it lets an attacker walk past the API limit with a fresh
+  value per request.
 
 ## 6. Verify in production
 
@@ -170,7 +171,8 @@ curl -s https://yourdomain.com/.well-known/security.txt
 ```
 
 - **In a browser:** load the site, open the console, confirm no `Refused to
-  load…` / CSP violations and that the hero animation and any islands render.
+  load…` / CSP violations and that the client bundle ran (the nav gets
+  `data-nav-enhanced`).
 - **Scanners:** [securityheaders.com](https://securityheaders.com),
   [Mozilla Observatory](https://observatory.mozilla.org), and Google's
   [CSP Evaluator](https://csp-evaluator.withgoogle.com) for policy strength.
@@ -196,22 +198,14 @@ want a spotless console.
 
 ## 8. Deliberately not implemented (yet)
 
-- **Breached-password checks** — password mode (`AUTH_MODE=password`) enforces
-  length only, per NIST SP 800-63B. Screening new passwords against a breach
-  corpus is the one composition-adjacent check that measurably helps; it needs a
-  k-anonymity lookup against Have I Been Pwned (or a local corpus) and an
-  outbound call on the sign-up path, so it is left to the fork.
-- **Multi-factor authentication** — no TOTP, WebAuthn, or emailed second factor.
-  A magic link is already single-factor-by-email; passwords are single-factor by
-  knowledge. Adding a second factor means new schema, recovery codes, and a
-  re-authentication flow.
-- **Password expiry / reuse history** — not implemented, and not recommended.
-  Forced rotation drives predictable mutations; reuse history means retaining old
-  hashes indefinitely.
+- **Anything account-shaped** — there are no accounts, so there is no
+  credential storage, no multi-factor flow, and no session invalidation to get
+  right. Adding sign-in brings all three back at once; the root
+  [`SECURITY.md`](../SECURITY.md) says what that would mean.
 - **Reporting API (`Reporting-Endpoints` + CSP `report-to`)** — needs a collector
   endpoint to receive violation reports. Add one to observe CSP breakage in the
   wild before tightening the policy.
-- **COEP / CORP** — `Cross-Origin-Embedder-Policy` would break the unpkg/esm.sh
+- **COEP / CORP** — `Cross-Origin-Embedder-Policy` would break the esm.sh
   scripts, and a strict `Cross-Origin-Resource-Policy` would block social scrapers
   from fetching the OG image. Only `Cross-Origin-Opener-Policy` is set. Revisit
   COEP if you ever need cross-origin isolation (e.g. `SharedArrayBuffer`).
