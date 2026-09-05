@@ -99,17 +99,25 @@ describe("browser smoke", () => {
     expect(styleSheets).toBeGreaterThan(0);
   });
 
-  test("the client bundle runs and enhances the nav", async () => {
+  test("the client bundle runs and mounts the workspace", async () => {
     await view.navigate(`${BASE}/`);
 
-    // Set only by src/client/components/nav-menu.ts at init — proves main.js
-    // was served, passed CSP, and executed.
-    const enhanced = await until(
+    // The workspace replaces the server-rendered shell, so its own empty state
+    // appearing proves main.js was served, passed CSP, and executed. Asserting
+    // on the mount rather than on markup the server also sends is what makes
+    // this a test of the bundle.
+    const mounted = await until(
       () =>
         view.evaluate<boolean>(
-          `document.querySelector('[data-component="nav"]')?.dataset.navEnhanced !== undefined`,
+          `!!document.querySelector(".empty-state button") && document.getElementById("app")?.children.length === 1`,
         ),
       (value) => value === true,
+    );
+    expect(mounted).toBe(true);
+
+    // Set only by src/client/components/nav-menu.ts at init.
+    const enhanced = await view.evaluate<boolean>(
+      `document.querySelector('[data-component="nav"]')?.dataset.navEnhanced !== undefined`,
     );
     expect(enhanced).toBe(true);
 

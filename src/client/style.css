@@ -1,5 +1,6 @@
 /* Page styles */
 @import "./pages/error.css";
+@import "./pages/write.css";
 
 /* Component styles */
 @import "./components/layout.css";

@@ -20,6 +20,40 @@ reading the repo.
 
 ## Gotchas
 
+### The handbook is data, not prose in the UI
+
+The app implements the process in Julian Shapiro's writing handbook
+(https://www.julian.com/guide/write/intro), and every rule it enforces or displays lives in
+`src/client/write/guide.ts` — the seven objectives and their outline scaffolds, the five
+skepticisms, the three succinctness passes, the score targets. The panels, `lint.ts` and
+`prompts.ts` all read from there.
+
+Keep it that way. The same numbers appear in three places at once — the intro's target of 8 is
+in the panel's copy, in the prompt sent to an agent, and in the check that colours the message —
+and a rule copied into a component is one that quietly disagrees with the prompt six months
+later. If the handbook and this file ever conflict, the handbook wins; note the discrepancy
+rather than silently ranging away from it.
+
+Two of its rules are counter-intuitive enough that they get "corrected" by anyone editing
+casually, so they are load-bearing: **no 7s** on an intro score (6, or 8-10 — a 7 commits to
+nothing), and **do not chase 9+** on a draft (one reader's 9 is not another's, and writing to
+satisfy everyone bloats the piece). Both are in the prompt text as well as the UI.
+
+### Feedback leaves through the clipboard, and comes back through a paste box
+
+`src/client/write/prompts.ts` builds five prompts, each carrying the piece, its objective, its
+intended reader and the handbook's verbatim instructions. The writer pastes them into whatever
+assistant they already have; two of the replies are parsed back (`SCORE: 8`, and
+`SECTION: … | HITS: n`).
+
+The app deliberately makes no model API calls. That would mean an API key, a cost per read and a
+signup, in an app whose whole premise is that it needs none of the three. If a feature seems to
+need a model, it needs a prompt template instead.
+
+The parsers are forgiving about formatting and strict about values — a score outside 1-10 is
+rejected rather than recorded — because the ship gate reads that number, and a misparse is
+silently wrong in the one figure the writer trusts.
+
 ### Persistence is the browser's, not the server's
 
 The server holds no per-visitor state: no sessions, no cookies beyond what the platform sets, no

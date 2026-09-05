@@ -1,14 +1,14 @@
 import {
-  home,
   llmsTxt,
   robotsTxt,
   securityTxt,
   sitemap,
   webmanifest,
+  write,
 } from "../controllers/app";
 
 export const appRoutes = {
-  "/": home.index,
+  "/": write.index,
   "/robots.txt": robotsTxt.index,
   "/site.webmanifest": webmanifest.index,
   "/sitemap.xml": sitemap.index,

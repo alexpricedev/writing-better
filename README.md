@@ -1,7 +1,47 @@
 # Writing Better
 
-A free writing app, built as a single Bun process. Your work stays in your browser — the server
-stores nothing about you.
+A companion for writing nonfiction worth reading, built as a single Bun process. Your work stays
+in your browser — the server stores nothing about you.
+
+---
+
+## What it does
+
+It walks a piece through the process in
+[Julian Shapiro's writing handbook](https://www.julian.com/guide/write/intro), one panel per
+stage:
+
+| Panel | What it holds |
+|---|---|
+| **Aim** | The objective (one of seven) and the motivation. The objective seeds the outline |
+| **Intro** | Hook brainstorm and ranking, the intro, and the five skepticisms a reader bails on |
+| **Outline** | Supporting points and resulting points, seeded from the objective |
+| **Draft** | One box per section, the two unstick questions, and `<to fill out>` placeholders |
+| **Rewrite** | Clarity checks, the three succinctness passes, rewrite-from-memory, the tweet test, and the dopamine map |
+| **Ship** | Score history against the 7.5 gate, the done checklist, and markdown export |
+
+The handbook's rules live as data in `src/client/write/guide.ts`, so the panels, the copyedit
+lint and the feedback prompts can't drift from each other.
+
+### Feedback without an account
+
+Half the handbook's machinery is other people: rate this intro out of 10, highlight every
+sentence that delighted you, summarise the piece back to me in thirty seconds. This app has no
+accounts and no server to collect that through, and calling a model API would mean keys and
+cost. So it builds the prompt instead — the piece, its objective, its intended reader, and the
+handbook's exact instructions — copies it to the clipboard, and takes the reply back through a
+paste box. Five prompts: rate the intro, probe its skepticisms, count the dopamine hits,
+summarise it in thirty seconds, score the full draft.
+
+Scores are parsed out of the reply (`SCORE: 8`) and tracked against the handbook's targets: 8 for
+an intro, an average of 7.5 to ship, and explicitly not higher.
+
+### The local copyedit pass
+
+What a machine can check without a reader: sentences over 25 words, paragraphs over five
+sentences, `-ly` adverbs a stronger verb would absorb, abstract filler, unfilled placeholders,
+and a Flesch-Kincaid grade as a proxy for the handbook's thirteen-year-old test. Advisory only,
+and shown in Rewrite rather than in Draft — the first draft is meant to be fast and bad.
 
 ---
 
@@ -74,7 +114,14 @@ src/
 │   ├── page-lifecycle.ts       # Page init/cleanup system
 │   ├── style.css               # Global styles (CSS entry point)
 │   ├── components/             # Shared JS + CSS (nav, layout)
-│   └── pages/                  # Page-specific JS + CSS (co-located)
+│   ├── pages/                  # Page-specific JS + CSS (co-located)
+│   └── write/                  # The workspace
+│       ├── guide.ts            # The handbook as data — objectives, checklists, targets
+│       ├── prompts.ts          # The five clipboard prompts, and the reply parsers
+│       ├── lint.ts             # The local copyedit pass
+│       ├── state.ts            # The draft model and its pure transforms
+│       ├── storage.ts          # localStorage, clipboard, export
+│       └── panels/             # One panel per stage of the handbook
 │
 └── server/                     # Server-side code
     ├── main.ts                 # Server entry point

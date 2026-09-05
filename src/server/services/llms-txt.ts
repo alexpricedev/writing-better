@@ -18,7 +18,8 @@ const PAGES: LlmsPage[] = [
   {
     path: "/",
     title: "Home",
-    description: "What the app is, and where the writing it holds is kept.",
+    description:
+      "The writing workspace itself: objective, hooks, outline, draft, rewrite, ship.",
   },
 ];
 
