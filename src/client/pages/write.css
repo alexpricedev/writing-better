@@ -1,16 +1,37 @@
 /* The workspace: a library of pieces on the left, one stage of the handbook on
    the right. Everything inherits the tokens in style.css. */
 
-[data-page="write"] main {
-  max-width: 1240px;
-  margin: 0 auto;
-  padding: 24px 20px 96px;
+/* Full-bleed: the workspace is a tool, not an article, and the editor wants
+   every pixel of width the window has. Prose blocks keep their own measure
+   below so the reminders don't stretch into unreadable lines.
+   
+   `body[data-page]` rather than `[data-page]`: layout.css caps `main` at 960px
+   through `[data-component="layout"] > main`, which has the same specificity as
+   a bare attribute selector and is imported after this file — so an equally
+   specific override here silently loses. The error pages still want that cap,
+   which is why this is scoped to the page rather than fixed in layout.css. */
+body[data-page="write"] > main {
+  max-width: none;
+  margin: 0;
+  padding: 56px 32px 140px;
+}
+
+@media (width <= 768px) {
+  body[data-page="write"] > main {
+    padding: 40px 24px 96px;
+  }
+}
+
+@media (width <= 640px) {
+  body[data-page="write"] > main {
+    padding: 32px 16px 96px;
+  }
 }
 
 .workspace {
   display: grid;
-  grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
-  gap: 32px;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  gap: 48px;
   align-items: start;
 }
 
@@ -26,7 +47,7 @@
   position: sticky;
   /* Sticks below the header without covering it; falls back to static on the
      single-column layout, where the library sits above the stage anyway. */
-  top: 24px;
+  top: 32px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   background: var(--color-surface);
@@ -110,7 +131,7 @@
   flex-wrap: wrap;
   gap: 4px;
   border-bottom: 1px solid var(--color-border);
-  margin-bottom: 24px;
+  margin-bottom: 40px;
 
   button {
     background: transparent;
@@ -132,7 +153,7 @@
 }
 
 .panel-head {
-  margin-bottom: 24px;
+  margin-bottom: 40px;
 
   h2 {
     margin-bottom: 4px;
@@ -145,12 +166,14 @@
 
 .panel {
   h3 {
-    margin-top: 32px;
+    margin-top: 40px;
     font-size: 1rem;
   }
 
+  /* Explanations keep a reading measure even when the window is 2000px wide.
+     Only the things you type into get the full width. */
   > p {
-    max-width: 68ch;
+    max-width: 72ch;
   }
 }
 
@@ -196,6 +219,9 @@
   list-style: none;
   margin: 8px 0 0;
   padding: 0;
+  /* Same reading measure as the prose: a checkbox row stretched across a wide
+     window puts its label a screen away from its box. */
+  max-width: 72ch;
 
   li {
     margin-bottom: 8px;
@@ -219,6 +245,8 @@
   display: flex;
   flex-wrap: wrap;
   gap: 16px;
+  /* Three short toggles on one line, inside a section block — not prose. */
+  max-width: none;
 
   li {
     margin-bottom: 0;
@@ -481,6 +509,7 @@
   border-left: 2px solid var(--color-border);
   padding: 4px 0 4px 16px;
   margin: 24px 0;
+  max-width: 72ch;
 
   h3 {
     margin: 0 0 8px;
