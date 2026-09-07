@@ -67,7 +67,7 @@ export const App = () => {
     // Nothing here is recoverable from a server, so deleting is final and says so.
     if (
       !confirm(
-        `Delete "${draft.title}"? It only exists in this browser, so this can't be undone.`,
+        `Delete "${draft.title || "Untitled"}"? It only exists in this browser, so this can't be undone.`,
       )
     ) {
       return;
@@ -113,14 +113,6 @@ export const App = () => {
                   </span>
                   <DraftSummary draft={draft} />
                 </button>
-                <button
-                  type="button"
-                  className="btn-danger"
-                  aria-label={`Delete ${draft.title}`}
-                  onClick={() => remove(draft.id)}
-                >
-                  ✕
-                </button>
               </li>
             ))}
           </ul>
@@ -142,19 +134,28 @@ export const App = () => {
 
         {active ? (
           <>
-            <nav className="panel-tabs" aria-label="Writing stages">
-              {PANELS.map((entry) => (
-                <button
-                  type="button"
-                  key={entry.id}
-                  className={entry.id === panel ? "active" : undefined}
-                  aria-current={entry.id === panel ? "page" : undefined}
-                  onClick={() => setPanel(entry.id)}
-                >
-                  {entry.label}
-                </button>
-              ))}
-            </nav>
+            <div className="stage-bar">
+              <nav className="panel-tabs" aria-label="Writing stages">
+                {PANELS.map((entry) => (
+                  <button
+                    type="button"
+                    key={entry.id}
+                    className={entry.id === panel ? "active" : undefined}
+                    aria-current={entry.id === panel ? "page" : undefined}
+                    onClick={() => setPanel(entry.id)}
+                  >
+                    {entry.label}
+                  </button>
+                ))}
+              </nav>
+              <button
+                type="button"
+                className="btn-danger stage-delete"
+                onClick={() => remove(active.id)}
+              >
+                Delete piece
+              </button>
+            </div>
 
             {panel === "aim" && <AimPanel draft={active} onChange={replace} />}
             {panel === "intro" && (

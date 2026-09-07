@@ -53,6 +53,10 @@ export const IntroPanel = ({ draft, onChange }: Props) => {
         to read on? Write them down even when you have no answer. Then drag the
         best to the top — the top ones are your hooks.
       </p>
+      <p className="text-tertiary">
+        One line each. A hook is half a story, so a longer one has usually given
+        away the other half.
+      </p>
 
       <div className="hook-add">
         <input
@@ -81,7 +85,11 @@ export const IntroPanel = ({ draft, onChange }: Props) => {
           {draft.hooks.map((hook, index) => (
             <li key={hook.id}>
               <span className="outline-index">{index + 1}</span>
-              <span className={index < 2 ? "hook-top" : undefined}>
+              <span
+                className={
+                  index < 2 ? "hook-question hook-top" : "hook-question"
+                }
+              >
                 {hook.question}
               </span>
               <span className="row-actions">

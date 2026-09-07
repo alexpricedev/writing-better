@@ -126,12 +126,28 @@ body[data-page="write"] > main {
 
 /* Stage -------------------------------------------------------------------- */
 
+/* The tabs and the delete share one rule across the top of the stage, so the
+   rule lives here rather than on the nav — the delete is not a stage. */
+.stage-bar {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 40px;
+}
+
+.stage-delete {
+  /* Lifted off the rule so the destructive control isn't the thing the eye
+     lands on when it follows the tabs across. */
+  margin-bottom: 6px;
+}
+
 .panel-tabs {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  border-bottom: 1px solid var(--color-border);
-  margin-bottom: 40px;
 
   button {
     background: transparent;
@@ -297,7 +313,9 @@ body[data-page="write"] > main {
   }
 }
 
-.hook-list li > span:first-child {
+/* The question, not the index — :first-child used to match .outline-index,
+   whose flex-basis: 0 then beat its own width and pushed the text right. */
+.hook-question {
   flex: 1;
 }
 
@@ -544,13 +562,13 @@ body[data-page="write"] > main {
 }
 
 .warning {
-  background: rgba(251, 191, 36, 0.08);
-  border: 1px solid rgba(251, 191, 36, 0.25);
+  background: var(--color-warning-surface);
+  border: 1px solid var(--color-warning-border);
   color: var(--color-warning);
 }
 
 .success {
-  background: rgba(52, 211, 153, 0.08);
-  border: 1px solid rgba(52, 211, 153, 0.25);
+  background: var(--color-success-surface);
+  border: 1px solid var(--color-success-border);
   color: var(--color-success);
 }
