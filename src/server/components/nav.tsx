@@ -16,13 +16,23 @@ export const Nav = ({ page }: NavProps) => (
       aria-controls="nav-menu"
       hidden
     >
-      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path
-          d="M4 7h16M4 12h16M4 17h16"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-        />
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M10 3H8" />
+        <path d="m15.007 5.008 3.987 3.986" />
+        <path d="M20 15v4" />
+        <path d="M21.174 6.813a2.82 2.82 0 0 0-3.986-3.987L3.842 16.175a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" />
+        <path d="M22 17h-4" />
+        <path d="M4 5v4" />
+        <path d="M6 7H2" />
+        <path d="M9 2v2" />
       </svg>
       <span className="sr-only">Menu</span>
     </button>

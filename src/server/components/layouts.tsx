@@ -10,9 +10,9 @@ import {
 import { Logo } from "./logo";
 import { Nav } from "./nav";
 
-// The site is dark-only (see `colorScheme: "dark"` on <html>), so theme-color
+// The site is light-only (see `colorScheme: "light"` on <html>), so theme-color
 // matches --color-bg from style.css rather than shipping light/dark variants.
-const THEME_COLOR = "#0a0a0b";
+const THEME_COLOR = "#ffffff";
 
 const canonicalUrl = (path?: string): string =>
   path ? new URL(path, SITE_URL).href : SITE_URL;
@@ -42,7 +42,7 @@ function HeadMeta({
       <title>{title}</title>
       <meta name="description" content={description} />
       {noindex && <meta name="robots" content="noindex, nofollow" />}
-      <meta name="color-scheme" content="dark" />
+      <meta name="color-scheme" content="light" />
       <meta name="theme-color" content={THEME_COLOR} />
       <link rel="canonical" href={canonicalUrl(canonicalPath)} />
       <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -87,7 +87,7 @@ export function Layout({
   noindex,
 }: LayoutProps) {
   return (
-    <html lang="en" style={{ colorScheme: "dark" }}>
+    <html lang="en" style={{ colorScheme: "light" }}>
       <head>
         <HeadMeta
           title={title}
@@ -172,7 +172,7 @@ interface ErrorLayoutProps {
 // crawlers never treat an error body as real content.
 export function ErrorLayout({ title, children, nav = true }: ErrorLayoutProps) {
   return (
-    <html lang="en" style={{ colorScheme: "dark" }}>
+    <html lang="en" style={{ colorScheme: "light" }}>
       <head>
         <HeadMeta title={title} description={SITE_DESCRIPTION} noindex />
       </head>
@@ -207,7 +207,7 @@ export function BaseLayout({
   noindex,
 }: BaseLayoutProps) {
   return (
-    <html lang="en" style={{ colorScheme: "dark" }}>
+    <html lang="en" style={{ colorScheme: "light" }}>
       <head>
         <HeadMeta
           title={title}

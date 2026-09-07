@@ -84,8 +84,8 @@ export const buildWebManifest = (): string =>
     start_url: "/",
     scope: "/",
     display: "standalone",
-    theme_color: "#0a0a0b",
-    background_color: "#0a0a0b",
+    theme_color: "#ffffff",
+    background_color: "#ffffff",
     icons: [
       {
         src: "/android-chrome-192x192.png",

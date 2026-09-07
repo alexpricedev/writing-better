@@ -32,7 +32,7 @@
     align-items: center;
     background: var(--color-primary);
     border-radius: var(--radius);
-    color: #fff;
+    color: var(--color-on-primary);
     display: inline-flex;
     font-size: 14px;
     font-weight: 500;
@@ -43,7 +43,7 @@
     &:hover,
     &:focus {
       background: var(--color-primary-hover);
-      color: #fff;
+      color: var(--color-on-primary);
       text-decoration: none;
     }
   }
